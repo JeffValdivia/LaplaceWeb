@@ -6,7 +6,8 @@ gestionado. Next.js 16 (App Router) + PostgreSQL + Drizzle ORM.
 
 ## Estado del proyecto
 
-**Infraestructura base: en construcción.**
+**Los 12 módulos de las Fases 1-3 están construidos y verificados
+localmente.** Falta el despliegue a un VPS real.
 
 | Pieza | Estado |
 | --- | --- |
@@ -14,8 +15,12 @@ gestionado. Next.js 16 (App Router) + PostgreSQL + Drizzle ORM.
 | Esquema de base de datos (Drizzle) — los 12 módulos | ✅ listo |
 | Autenticación y sesiones (propia, sin librería externa) | ✅ listo |
 | Docker Compose (app + Postgres + Caddy) | ✅ listo |
-| Migraciones aplicadas a una base real | ⏳ pendiente (falta Docker instalado) |
-| Pantallas (login, dashboard, etc.) | ⏳ pendiente — arranca con Fase 1 |
+| Migraciones aplicadas a una base real | ✅ listo (local, vía Docker) |
+| Pantallas de los 12 módulos (admin, docente, estudiante) | ✅ listo |
+| Verificado en navegador: login, dashboard, aislamiento por rol, ciclo completo de una evaluación (crear → rendir → calificar → bloquear reintento) | ✅ verificado |
+| Repo en GitHub | ✅ conectado (`JeffValdivia/LaplaceWeb`) |
+| Desplegado en un VPS de Hetzner | ⏳ pendiente |
+| Pruebas de punta a punta de cada uno de los 12 módulos | ⏳ pendiente — solo se verificó el camino principal de algunos |
 
 ## Por qué autenticación propia y no Auth.js
 
@@ -91,8 +96,9 @@ npm run dev
 
 1. Crear cuenta y VPS en Hetzner (guía pendiente — se agrega cuando se
    cree la cuenta).
-2. Copiar el proyecto al VPS, crear `.env` con `DB_PASSWORD` y
-   `DOMINIO` (el dominio real).
+2. Clonar el repo en el VPS (`git clone git@github.com:JeffValdivia/LaplaceWeb.git`
+   o por HTTPS) y crear `.env` con `DB_PASSWORD` y `DOMINIO` (el
+   dominio real).
 3. `docker compose up -d --build` (en el VPS, `docker-compose.override.yml`
    no se usa — Postgres queda cerrado, sin exponerse a internet).
 4. Caddy pide el certificado HTTPS solo, apuntando el DNS del dominio
