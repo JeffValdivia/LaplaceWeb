@@ -1,0 +1,7 @@
+# Se aplica automáticamente en desarrollo local (docker compose lo
+# combina con docker-compose.yml sin necesidad de -f). En el VPS este
+# archivo no se copia, así que producción nunca expone Postgres.
+services:
+  db:
+    ports:
+      - "5432:5432"
