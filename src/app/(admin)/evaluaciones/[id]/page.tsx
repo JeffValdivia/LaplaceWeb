@@ -27,8 +27,8 @@ export default async function EvaluacionDetallePage({
     })
     .from(evaluaciones)
     .innerJoin(cursos, eq(cursos.id, evaluaciones.cursoId))
-    .innerJoin(grupos, eq(grupos.id, cursos.grupoId))
-    .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
+    .leftJoin(grupos, eq(grupos.id, cursos.grupoId))
+    .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
     .innerJoin(asignaturas, eq(asignaturas.id, cursos.asignaturaId))
     .where(eq(evaluaciones.id, id))
     .limit(1);
@@ -61,8 +61,17 @@ export default async function EvaluacionDetallePage({
       <div>
         <h1 className="text-xl font-semibold text-ink">{evaluacion.titulo}</h1>
         <p className="text-sm text-ink-soft">
-          {evaluacion.sedeNombre} · {modalidadEtiqueta[evaluacion.modalidad] ?? evaluacion.modalidad} ·{" "}
-          {evaluacion.grupoNombre} · {evaluacion.asignaturaNombre}
+          {evaluacion.grupoNombre ? (
+            <>
+              {evaluacion.sedeNombre} ·{" "}
+              {modalidadEtiqueta[evaluacion.modalidad ?? ""] ?? evaluacion.modalidad} ·{" "}
+              {evaluacion.grupoNombre} · {evaluacion.asignaturaNombre}
+            </>
+          ) : (
+            <>
+              <span className="italic">Sin grupo</span> · {evaluacion.asignaturaNombre}
+            </>
+          )}
         </p>
       </div>
 

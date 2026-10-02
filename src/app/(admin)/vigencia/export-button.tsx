@@ -4,9 +4,9 @@ type Fila = {
   dni: string;
   nombres: string;
   apellidos: string;
-  sedeNombre: string;
-  modalidad: string;
-  grupoNombre: string;
+  sedeNombre: string | null;
+  modalidad: string | null;
+  grupoNombre: string | null;
   fechaIngreso: string;
   fechaFin: string;
   estado: string;
@@ -35,9 +35,9 @@ function aCsv(filas: Fila[]) {
       f.dni,
       f.nombres,
       f.apellidos,
-      f.sedeNombre,
-      modalidadEtiqueta[f.modalidad] ?? f.modalidad,
-      f.grupoNombre,
+      f.sedeNombre ?? "",
+      modalidadEtiqueta[f.modalidad ?? ""] ?? f.modalidad ?? "",
+      f.grupoNombre ?? "Sin grupo",
       f.fechaIngreso,
       f.fechaFin,
       f.estado,

@@ -35,10 +35,11 @@ export async function obtenerUsuarioActual() {
   const [fila] = await db
     .select({
       id: usuarios.id,
-      email: usuarios.email,
+      dni: usuarios.dni,
       nombreCompleto: usuarios.nombreCompleto,
       rol: usuarios.rol,
       estudianteId: usuarios.estudianteId,
+      debeCambiarPassword: usuarios.debeCambiarPassword,
       expiresAt: sesiones.expiresAt,
     })
     .from(sesiones)
@@ -54,10 +55,11 @@ export async function obtenerUsuarioActual() {
 
   return {
     id: fila.id,
-    email: fila.email,
+    dni: fila.dni,
     nombreCompleto: fila.nombreCompleto,
     rol: fila.rol,
     estudianteId: fila.estudianteId,
+    debeCambiarPassword: fila.debeCambiarPassword,
   };
 }
 

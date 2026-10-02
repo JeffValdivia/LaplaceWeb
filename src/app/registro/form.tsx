@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useActionState } from "react";
-import { matricularEstudiante } from "../actions";
-
-const hoy = new Date().toISOString().slice(0, 10);
+import Link from "next/link";
+import { registrarEstudiante } from "@/lib/auth/actions";
 
 const campo =
   "rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue-light/40";
@@ -24,10 +23,10 @@ const PROCESOS_POR_SEDE: Record<string, { value: string; label: string }[]> = {
 };
 
 type Sede = { id: string; nombre: string };
-type Grupo = { id: string; nombre: string; modalidad: string; sedeId: string };
+type Grupo = { id: string; nombre: string; sedeId: string };
 type Carrera = { id: string; nombre: string };
 
-export function NuevoEstudianteForm({
+export function RegistroForm({
   sedes,
   grupos,
   carreras,
@@ -36,26 +35,20 @@ export function NuevoEstudianteForm({
   grupos: Grupo[];
   carreras: Carrera[];
 }) {
-  const [error, formAction, pending] = useActionState(matricularEstudiante, null);
+  const [error, formAction, pending] = useActionState(registrarEstudiante, null);
   const [sedeId, setSedeId] = useState("");
   const [grupoId, setGrupoId] = useState("");
   const [proceso, setProceso] = useState("");
 
   const sedeNombre = useMemo(() => sedes.find((s) => s.id === sedeId)?.nombre ?? "", [sedes, sedeId]);
-  const gruposDeLaSede = useMemo(
-    () => grupos.filter((g) => g.sedeId === sedeId),
-    [grupos, sedeId]
-  );
+  const gruposDeLaSede = useMemo(() => grupos.filter((g) => g.sedeId === sedeId), [grupos, sedeId]);
   const procesosDeLaSede = useMemo(() => PROCESOS_POR_SEDE[sedeNombre] ?? [], [sedeNombre]);
 
   return (
-    <form
-      action={formAction}
-      className="flex max-w-3xl flex-col gap-6 rounded-lg border border-line bg-surface p-6"
-    >
-      <div className="grid gap-6 sm:grid-cols-2">
-        <fieldset className="flex flex-col gap-4 rounded-lg border border-line bg-bg p-4">
-          <legend className="mb-1 px-1 text-sm font-medium text-ink">Datos del alumno</legend>
+    <form action={formAction} className="flex flex-col gap-6">
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-1 text-sm font-medium text-ink">Datos del alumno</legend>
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className={etiqueta}>
             <span className="font-medium text-ink">Apellidos</span>
             <input name="apellidos" required className={campo} />
@@ -66,7 +59,7 @@ export function NuevoEstudianteForm({
           </label>
           <label className={etiqueta}>
             <span className="font-medium text-ink">DNI</span>
-            <input name="dni" required maxLength={8} className={campo} />
+            <input name="dni" required maxLength={8} autoComplete="username" className={campo} />
           </label>
           <label className={etiqueta}>
             <span className="font-medium text-ink">Fecha de nacimiento</span>
@@ -80,10 +73,20 @@ export function NuevoEstudianteForm({
             <span className="font-medium text-ink">Correo electrónico</span>
             <input type="email" name="correo" required className={campo} />
           </label>
-        </fieldset>
+          <label className={etiqueta}>
+            <span className="font-medium text-ink">Nombres del apoderado</span>
+            <input name="apoderado_nombre" required className={campo} />
+          </label>
+          <label className={etiqueta}>
+            <span className="font-medium text-ink">Celular del apoderado</span>
+            <input name="apoderado_celular" required className={campo} />
+          </label>
+        </div>
+      </fieldset>
 
-        <fieldset className="flex flex-col gap-4 rounded-lg border border-line bg-bg p-4">
-          <legend className="mb-1 px-1 text-sm font-medium text-ink">Datos de la sede y postulación</legend>
+      <fieldset className="flex flex-col gap-4 border-t border-line pt-4">
+        <legend className="mb-1 text-sm font-medium text-ink">Datos de la postulación</legend>
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className={etiqueta}>
             <span className="font-medium text-ink">Sede</span>
             <select
@@ -125,9 +128,6 @@ export function NuevoEstudianteForm({
                 </option>
               ))}
             </select>
-            {sedeId && !gruposDeLaSede.length && (
-              <span className="text-xs text-warn">Esta sede todavía no tiene grupos.</span>
-            )}
           </label>
           <label className={etiqueta}>
             <span className="font-medium text-ink">Carrera a la que postula</span>
@@ -172,29 +172,22 @@ export function NuevoEstudianteForm({
               <option value="estudiante">Estudiante</option>
             </select>
           </label>
-          <label className={etiqueta}>
-            <span className="font-medium text-ink">Fecha de ingreso</span>
-            <input
-              type="date"
-              name="fecha_ingreso"
-              required
-              defaultValue={hoy}
-              className={campo}
-            />
-          </label>
-        </fieldset>
-      </div>
+        </div>
+      </fieldset>
 
-      <fieldset className="flex flex-col gap-4 rounded-lg border border-line bg-bg p-4">
-        <legend className="mb-1 px-1 text-sm font-medium text-ink">Apoderado</legend>
+      <fieldset className="flex flex-col gap-4 border-t border-line pt-4">
+        <legend className="mb-1 text-sm font-medium text-ink">Tu cuenta de acceso</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={etiqueta}>
-            <span className="font-medium text-ink">Nombres del apoderado</span>
-            <input name="apoderado_nombre" required className={campo} />
-          </label>
-          <label className={etiqueta}>
-            <span className="font-medium text-ink">Celular del apoderado</span>
-            <input name="apoderado_celular" required className={campo} />
+            <span className="font-medium text-ink">Contraseña</span>
+            <input
+              type="password"
+              name="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              className={campo}
+            />
           </label>
         </div>
       </fieldset>
@@ -206,10 +199,16 @@ export function NuevoEstudianteForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-md bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-blue disabled:opacity-60"
+        className="self-start rounded-md bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-blue disabled:opacity-60"
       >
-        {pending ? "Guardando…" : "Matricular"}
+        {pending ? "Creando…" : "Inscribirme y crear mi cuenta"}
       </button>
+
+      <p className="text-center text-sm text-ink-soft">
+        <Link href="/login" className="text-brand-blue hover:underline">
+          Ya tengo cuenta, iniciar sesión
+        </Link>
+      </p>
     </form>
   );
 }

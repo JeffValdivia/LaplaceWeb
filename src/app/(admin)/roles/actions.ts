@@ -7,13 +7,13 @@ import { usuarios } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 
 export async function crearUsuario(_prevState: string | null, formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
+  const dni = String(formData.get("dni") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const nombreCompleto = String(formData.get("nombre_completo") ?? "").trim();
   const rol = String(formData.get("rol") ?? "");
 
-  if (!email || !password || !nombreCompleto) {
-    return "Completa correo, contraseña y nombre.";
+  if (!dni || !password || !nombreCompleto) {
+    return "Completa DNI, contraseña y nombre.";
   }
   if (password.length < 6) {
     return "La contraseña debe tener al menos 6 caracteres.";
@@ -24,11 +24,11 @@ export async function crearUsuario(_prevState: string | null, formData: FormData
 
   try {
     const passwordHash = await hashPassword(password);
-    await db.insert(usuarios).values({ email, passwordHash, nombreCompleto, rol });
+    await db.insert(usuarios).values({ dni, passwordHash, nombreCompleto, rol });
   } catch (err: unknown) {
     const mensaje = err instanceof Error ? err.message : "";
     return mensaje.includes("unique")
-      ? "Ya existe un usuario con ese correo."
+      ? "Ya existe un usuario con ese DNI."
       : "No se pudo crear el usuario.";
   }
 

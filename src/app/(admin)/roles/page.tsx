@@ -6,7 +6,7 @@ import { RolSelect } from "./rol-select";
 
 export default async function RolesPage() {
   const lista = await db
-    .select({ id: usuarios.id, nombreCompleto: usuarios.nombreCompleto, email: usuarios.email, rol: usuarios.rol })
+    .select({ id: usuarios.id, nombreCompleto: usuarios.nombreCompleto, dni: usuarios.dni, rol: usuarios.rol })
     .from(usuarios)
     .orderBy(asc(usuarios.nombreCompleto));
 
@@ -28,7 +28,7 @@ export default async function RolesPage() {
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-soft">
               <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Correo</th>
+              <th className="px-4 py-3 font-medium">DNI</th>
               <th className="px-4 py-3 font-medium">Rol</th>
             </tr>
           </thead>
@@ -36,7 +36,7 @@ export default async function RolesPage() {
             {lista.map((u) => (
               <tr key={u.id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3 font-medium text-ink">{u.nombreCompleto}</td>
-                <td className="px-4 py-3 text-ink-soft">{u.email}</td>
+                <td className="px-4 py-3 font-mono-tab text-ink-soft">{u.dni}</td>
                 <td className="px-4 py-3">
                   <RolSelect id={u.id} rolActual={u.rol} />
                 </td>

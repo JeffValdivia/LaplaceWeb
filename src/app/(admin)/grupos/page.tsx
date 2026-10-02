@@ -1,12 +1,7 @@
-import Link from "next/link";
 import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { grupos, sedes, cursos } from "@/lib/db/schema";
-
-const modalidadEtiqueta: Record<string, string> = {
-  presencial: "Presencial",
-  virtual: "Virtual",
-};
+import { GrupoFila } from "./grupo-fila";
 
 export default async function GruposPage() {
   const listaGrupos = await db
@@ -31,9 +26,9 @@ export default async function GruposPage() {
         <p className="text-sm text-ink-soft">
           Vista general de todos los grupos. Para crear uno nuevo, entra a su
           sede desde{" "}
-          <Link href="/sedes" className="underline">
-            Sedes y asignaturas
-          </Link>
+          <a href="/sedes" className="underline">
+            Asignaturas
+          </a>
           .
         </p>
       </div>
@@ -51,26 +46,7 @@ export default async function GruposPage() {
           </thead>
           <tbody>
             {listaGrupos.map((g) => (
-              <tr key={g.id} className="border-b border-line last:border-0">
-                <td className="px-4 py-3 font-medium text-ink">{g.nombre}</td>
-                <td className="px-4 py-3 text-ink-soft">
-                  <Link href={`/sedes/${g.sedeId}`} className="hover:text-brand-blue hover:underline">
-                    {g.sedeNombre}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {modalidadEtiqueta[g.modalidad] ?? g.modalidad}
-                </td>
-                <td className="px-4 py-3 font-mono-tab text-ink-soft">{g.cantidadCursos}</td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/grupos/${g.id}`}
-                    className="text-xs font-medium text-brand-blue hover:underline"
-                  >
-                    Gestionar cursos
-                  </Link>
-                </td>
-              </tr>
+              <GrupoFila key={g.id} grupo={g} />
             ))}
             {!listaGrupos.length && (
               <tr>

@@ -19,8 +19,8 @@ export function NuevoUsuarioForm() {
         <input name="nombre_completo" required className={campo} />
       </label>
       <label className="flex flex-1 flex-col gap-1.5 text-sm">
-        <span className="font-medium text-ink">Correo</span>
-        <input type="email" name="email" required className={campo} />
+        <span className="font-medium text-ink">DNI</span>
+        <input name="dni" required maxLength={8} className={campo} />
       </label>
       <label className="flex flex-1 flex-col gap-1.5 text-sm">
         <span className="font-medium text-ink">Contraseña inicial</span>

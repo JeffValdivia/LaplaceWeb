@@ -37,7 +37,7 @@ export default async function SedeDetallePage({
     <div className="flex flex-col gap-6">
       <div>
         <Link href="/sedes" className="text-sm text-brand-blue hover:underline">
-          ← Sedes y asignaturas
+          ← Asignaturas
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-ink">{sede.nombre}</h1>
         {sede.descripcion && <p className="text-sm text-ink-soft">{sede.descripcion}</p>}

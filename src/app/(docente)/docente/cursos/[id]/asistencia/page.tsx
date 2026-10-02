@@ -30,19 +30,21 @@ export default async function AsistenciaDocentePage({
     .limit(1);
   if (!curso) notFound();
 
-  const matriculados = await db
-    .select({
-      estudianteId: estudiantes.id,
-      dni: estudiantes.dni,
-      nombres: estudiantes.nombres,
-      apellidos: estudiantes.apellidos,
-      fechaFin: matriculas.fechaFin,
-      retirada: matriculas.retirada,
-    })
-    .from(matriculas)
-    .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
-    .where(eq(matriculas.grupoId, curso.grupoId))
-    .orderBy(asc(estudiantes.apellidos));
+  const matriculados = curso.grupoId
+    ? await db
+        .select({
+          estudianteId: estudiantes.id,
+          dni: estudiantes.dni,
+          nombres: estudiantes.nombres,
+          apellidos: estudiantes.apellidos,
+          fechaFin: matriculas.fechaFin,
+          retirada: matriculas.retirada,
+        })
+        .from(matriculas)
+        .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
+        .where(eq(matriculas.grupoId, curso.grupoId))
+        .orderBy(asc(estudiantes.apellidos))
+    : [];
 
   const roster = matriculados.filter((m) => {
     const estado = calcularEstado(m.fechaFin, m.retirada);
@@ -144,7 +146,9 @@ export default async function AsistenciaDocentePage({
               {!roster.length && (
                 <tr>
                   <td colSpan={3} className="px-3 py-6 text-center text-ink-soft">
-                    No hay matriculados activos en este grupo.
+                    {curso.grupoId
+                      ? "No hay matriculados activos en este grupo."
+                      : "Este curso ya no tiene grupo asociado."}
                   </td>
                 </tr>
               )}

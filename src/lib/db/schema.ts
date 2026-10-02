@@ -18,7 +18,10 @@ export const usuarios = pgTable(
   "usuarios",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    email: text("email").notNull().unique(),
+    dni: text("dni").notNull().unique(),
+    // Ya no es el identificador de login (eso es `dni`); queda como dato de
+    // contacto opcional.
+    email: text("email"),
     passwordHash: text("password_hash").notNull(),
     nombreCompleto: text("nombre_completo").notNull(),
     rol: text("rol").notNull(),
@@ -29,6 +32,11 @@ export const usuarios = pgTable(
     // borrar un estudiante mientras tenga una cuenta de acceso vinculada,
     // en vez de dejarla huérfana silenciosamente.
     estudianteId: uuid("estudiante_id").references(() => estudiantes.id),
+    // Se marca true en cuentas creadas por el staff con contraseña
+    // provisional (ej. carga masiva por Excel, contraseña = DNI) para
+    // forzar que la cambien en su primer ingreso. Las cuentas que eligen
+    // su propia contraseña (autoregistro) quedan en false.
+    debeCambiarPassword: boolean("debe_cambiar_password").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -94,9 +102,9 @@ export const cursos = pgTable(
   "cursos",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    grupoId: uuid("grupo_id")
-      .notNull()
-      .references(() => grupos.id, { onDelete: "cascade" }),
+    // Nulo cuando el grupo al que pertenecía se eliminó: el curso y su
+    // historial (evaluaciones, asistencia) se conservan sin grupo.
+    grupoId: uuid("grupo_id").references(() => grupos.id, { onDelete: "set null" }),
     asignaturaId: uuid("asignatura_id")
       .notNull()
       .references(() => asignaturas.id),
@@ -115,6 +123,7 @@ export const estudiantes = pgTable("estudiantes", {
   dni: text("dni").notNull().unique(),
   nombres: text("nombres").notNull(),
   apellidos: text("apellidos").notNull(),
+  fechaNacimiento: date("fecha_nacimiento"),
   fotoUrl: text("foto_url"),
   telefono: text("telefono"),
   email: text("email"),
@@ -123,23 +132,50 @@ export const estudiantes = pgTable("estudiantes", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ── Carreras (catálogo de carreras a las que se postula) ────────────────
+export const carreras = pgTable("carreras", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  nombre: text("nombre").notNull().unique(),
+  activo: boolean("activo").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ── Matrículas (módulos 02 y 05) ─────────────────────────────────────────
 // fecha_fin se calcula en el servidor al matricular (fecha_ingreso + 1 mes),
 // no como columna generada en la base — así queda igual de simple sin
 // depender de sintaxis específica de Postgres para columnas calculadas.
-export const matriculas = pgTable("matriculas", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  estudianteId: uuid("estudiante_id")
-    .notNull()
-    .references(() => estudiantes.id, { onDelete: "cascade" }),
-  grupoId: uuid("grupo_id")
-    .notNull()
-    .references(() => grupos.id),
-  fechaIngreso: date("fecha_ingreso").notNull(),
-  fechaFin: date("fecha_fin").notNull(),
-  retirada: boolean("retirada").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const matriculas = pgTable(
+  "matriculas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    estudianteId: uuid("estudiante_id")
+      .notNull()
+      .references(() => estudiantes.id, { onDelete: "cascade" }),
+    // Nulo cuando el grupo en el que estaba matriculado se eliminó: la
+    // matrícula y el historial del estudiante se conservan sin grupo.
+    grupoId: uuid("grupo_id").references(() => grupos.id, { onDelete: "set null" }),
+    // Datos de la postulación. Nulos en matrículas creadas por el staff antes
+    // de este cambio, o desde "Estudiantes y matrículas" (ese formulario
+    // interno no los pide); el autoregistro público sí los exige.
+    carreraId: uuid("carrera_id").references(() => carreras.id),
+    proceso: text("proceso"),
+    tipoPostulacion: text("tipo_postulacion"),
+    fechaIngreso: date("fecha_ingreso").notNull(),
+    fechaFin: date("fecha_fin").notNull(),
+    retirada: boolean("retirada").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "matriculas_proceso_check",
+      sql`${t.proceso} in ('ordinario','extraordinario','preca','ceprequintos')`
+    ),
+    check(
+      "matriculas_tipo_postulacion_check",
+      sql`${t.tipoPostulacion} in ('egresado','estudiante')`
+    ),
+  ]
+);
 
 // ── Campus virtual (módulo 06) ───────────────────────────────────────────
 export const recursos = pgTable("recursos", {

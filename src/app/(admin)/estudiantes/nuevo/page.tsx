@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { grupos, sedes } from "@/lib/db/schema";
+import { carreras, grupos, sedes } from "@/lib/db/schema";
 import { NuevoEstudianteForm } from "./form";
 
 export default async function NuevoEstudiantePage() {
-  const [listaSedes, listaGrupos] = await Promise.all([
+  const [listaSedes, listaGrupos, listaCarreras] = await Promise.all([
     db.select().from(sedes).orderBy(asc(sedes.nombre)),
     db
       .select({
@@ -17,6 +17,11 @@ export default async function NuevoEstudiantePage() {
       .from(grupos)
       .where(eq(grupos.activo, true))
       .orderBy(asc(grupos.nombre)),
+    db
+      .select({ id: carreras.id, nombre: carreras.nombre })
+      .from(carreras)
+      .where(eq(carreras.activo, true))
+      .orderBy(asc(carreras.nombre)),
   ]);
 
   return (
@@ -32,12 +37,12 @@ export default async function NuevoEstudiantePage() {
         <p className="rounded-lg border border-warn/30 bg-warn-soft px-4 py-3 text-sm text-warn">
           Todavía no hay grupos académicos creados. Ve a{" "}
           <Link href="/sedes" className="underline">
-            Sedes y asignaturas
+            Asignaturas
           </Link>{" "}
           y crea uno antes de matricular.
         </p>
       ) : (
-        <NuevoEstudianteForm sedes={listaSedes} grupos={listaGrupos} />
+        <NuevoEstudianteForm sedes={listaSedes} grupos={listaGrupos} carreras={listaCarreras} />
       )}
     </div>
   );

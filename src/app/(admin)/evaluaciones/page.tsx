@@ -25,8 +25,8 @@ export default async function EvaluacionesPage() {
       })
       .from(evaluaciones)
       .innerJoin(cursos, eq(cursos.id, evaluaciones.cursoId))
-      .innerJoin(grupos, eq(grupos.id, cursos.grupoId))
-      .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
+      .leftJoin(grupos, eq(grupos.id, cursos.grupoId))
+      .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
       .innerJoin(asignaturas, eq(asignaturas.id, cursos.asignaturaId))
       .leftJoin(preguntas, eq(preguntas.evaluacionId, evaluaciones.id))
       .groupBy(evaluaciones.id, grupos.nombre, grupos.modalidad, sedes.nombre, asignaturas.nombre)
@@ -138,8 +138,16 @@ export default async function EvaluacionesPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-ink-soft">
-                  {ev.sedeNombre} · {modalidadEtiqueta[ev.modalidad] ?? ev.modalidad} ·{" "}
-                  {ev.grupoNombre} · {ev.asignaturaNombre}
+                  {ev.grupoNombre ? (
+                    <>
+                      {ev.sedeNombre} · {modalidadEtiqueta[ev.modalidad ?? ""] ?? ev.modalidad} ·{" "}
+                      {ev.grupoNombre} · {ev.asignaturaNombre}
+                    </>
+                  ) : (
+                    <>
+                      <span className="italic">Sin grupo</span> · {ev.asignaturaNombre}
+                    </>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-mono-tab text-ink-soft">
                   {ev.cantidadPreguntas}
