@@ -23,7 +23,7 @@ export default async function CursoDocentePage({
       asignaturaNombre: asignaturas.nombre,
     })
     .from(cursos)
-    .innerJoin(grupos, eq(grupos.id, cursos.grupoId))
+    .leftJoin(grupos, eq(grupos.id, cursos.grupoId))
     .innerJoin(asignaturas, eq(asignaturas.id, cursos.asignaturaId))
     .where(and(eq(cursos.id, id), eq(cursos.docenteId, usuario.id)))
     .limit(1);
@@ -40,13 +40,13 @@ export default async function CursoDocentePage({
     <div className="flex flex-col gap-6">
       <div>
         <Link
-          href={`/docente/grupos/${curso.grupoId}`}
+          href={curso.grupoId ? `/docente/grupos/${curso.grupoId}` : "/docente"}
           className="text-sm text-brand-blue hover:underline"
         >
-          ← {curso.grupoNombre}
+          ← {curso.grupoNombre ?? "Mis grupos y cursos"}
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-ink">{curso.asignaturaNombre}</h1>
-        <p className="text-sm text-ink-soft">{curso.grupoNombre}</p>
+        <p className="text-sm text-ink-soft">{curso.grupoNombre ?? "Sin grupo"}</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -14,7 +14,7 @@ export default async function EvaluacionesPortalPage() {
     .select({ grupoId: matriculas.grupoId })
     .from(matriculas)
     .where(eq(matriculas.estudianteId, usuario.estudianteId));
-  const grupoIds = misGrupos.map((g) => g.grupoId);
+  const grupoIds = misGrupos.map((g) => g.grupoId).filter((id): id is string => id !== null);
 
   const misCursos = grupoIds.length
     ? await db.select({ id: cursos.id }).from(cursos).where(inArray(cursos.grupoId, grupoIds))

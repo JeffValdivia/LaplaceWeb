@@ -30,7 +30,7 @@ export async function GET(
 
   let autorizado = usuario.rol === "admin" || fila.docenteId === usuario.id;
 
-  if (!autorizado && usuario.rol === "estudiante" && usuario.estudianteId) {
+  if (!autorizado && usuario.rol === "estudiante" && usuario.estudianteId && fila.grupoId) {
     const [matriculado] = await db
       .select({ id: matriculas.id })
       .from(matriculas)

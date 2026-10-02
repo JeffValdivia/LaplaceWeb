@@ -29,11 +29,12 @@ export default function LoginPage() {
 
         <form action={formAction} className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-ink">Correo</span>
+            <span className="font-medium text-ink">DNI</span>
             <input
-              type="email"
-              name="email"
+              type="text"
+              name="dni"
               required
+              maxLength={8}
               autoComplete="username"
               className="rounded-md border border-line bg-bg px-3 py-2 text-ink outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue-light/40"
             />

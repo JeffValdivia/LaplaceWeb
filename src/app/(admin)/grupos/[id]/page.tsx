@@ -128,7 +128,7 @@ export default async function GrupoDetallePage({
         <p className="rounded-lg border border-warn/30 bg-warn-soft px-4 py-3 text-sm text-warn">
           Todavía no registraste ninguna asignatura. Ve a{" "}
           <Link href="/sedes" className="underline">
-            Sedes y asignaturas
+            Asignaturas
           </Link>{" "}
           para crear una.
         </p>

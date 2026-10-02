@@ -2,7 +2,7 @@ import Link from "next/link";
 import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { sedes, asignaturas, grupos } from "@/lib/db/schema";
-import { crearSede, crearAsignatura } from "./actions";
+import { crearAsignatura } from "./actions";
 
 export default async function SedesPage() {
   const [listaSedes, listaAsignaturas] = await Promise.all([
@@ -23,12 +23,11 @@ export default async function SedesPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Sedes y asignaturas</h1>
+        <h1 className="text-xl font-semibold text-ink">Asignaturas</h1>
         <p className="text-sm text-ink-soft">
-          Sede = el local de la academia (ej. UNSA, Canto, UNSA Virtual).
-          Registra la sede y entra a ella para crear sus grupos. Un grupo
-          combina una sede y una modalidad (presencial o virtual). Asignatura
-          = la materia que se dicta dentro de un grupo, con su propio docente.
+          Asignatura = la materia que se dicta dentro de un grupo, con su
+          propio docente. Las sedes son fijas (UCSM y UNSA); entra a una para
+          crear o ver sus grupos.
         </p>
       </div>
 
@@ -38,45 +37,18 @@ export default async function SedesPage() {
           <ul className="flex flex-col divide-y divide-line">
             {listaSedes.map((s) => (
               <li key={s.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                <div>
-                  <Link
-                    href={`/sedes/${s.id}`}
-                    className="font-medium text-ink hover:text-brand-blue hover:underline"
-                  >
-                    {s.nombre}
-                  </Link>
-                  {s.descripcion && (
-                    <p className="text-xs text-ink-soft">{s.descripcion}</p>
-                  )}
-                </div>
+                <Link
+                  href={`/sedes/${s.id}`}
+                  className="font-medium text-ink hover:text-brand-blue hover:underline"
+                >
+                  {s.nombre}
+                </Link>
                 <span className="font-mono-tab text-xs text-ink-soft">
                   {s.cantidadGrupos} grupo{s.cantidadGrupos === 1 ? "" : "s"}
                 </span>
               </li>
             ))}
-            {!listaSedes.length && (
-              <li className="py-2 text-sm text-ink-soft">Todavía no hay sedes.</li>
-            )}
           </ul>
-          <form action={crearSede} className="flex flex-col gap-2 border-t border-line pt-4">
-            <input
-              name="nombre"
-              required
-              placeholder="Nombre de la sede"
-              className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
-            />
-            <input
-              name="descripcion"
-              placeholder="Descripción (opcional)"
-              className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
-            />
-            <button
-              type="submit"
-              className="self-start rounded-md bg-brand-navy px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-blue"
-            >
-              Agregar sede
-            </button>
-          </form>
         </section>
 
         <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5">

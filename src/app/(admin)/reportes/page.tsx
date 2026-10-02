@@ -54,8 +54,8 @@ export default async function ReportesPage({
       })
       .from(matriculas)
       .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
-      .innerJoin(grupos, eq(grupos.id, matriculas.grupoId))
-      .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
+      .leftJoin(grupos, eq(grupos.id, matriculas.grupoId))
+      .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
       .orderBy(desc(matriculas.fechaIngreso)),
   ]);
 
@@ -76,7 +76,9 @@ export default async function ReportesPage({
     .sort((a, b) => a.apellidos.localeCompare(b.apellidos));
 
   const estudianteIds = [...new Set(filasFiltradas.map((f) => f.estudianteId))];
-  const grupoIds = [...new Set(filasFiltradas.map((f) => f.grupoId))];
+  const grupoIds = [
+    ...new Set(filasFiltradas.map((f) => f.grupoId).filter((id): id is string => id !== null)),
+  ];
 
   const [asistenciasFilas, evaluacionesFilas, intentosFilas] = await Promise.all([
     estudianteIds.length
@@ -115,6 +117,7 @@ export default async function ReportesPage({
   }
   const evaluacionesPorGrupo = new Map<string, Set<string>>();
   for (const e of evaluacionesFilas) {
+    if (!e.grupoId) continue;
     const set = evaluacionesPorGrupo.get(e.grupoId) ?? new Set<string>();
     set.add(e.id);
     evaluacionesPorGrupo.set(e.grupoId, set);
@@ -132,7 +135,7 @@ export default async function ReportesPage({
     const intentosEstudiante = intentosFilas.filter(
       (i) => i.estudianteId === f.estudianteId && i.entregadoAt
     );
-    const totalEvaluacionesGrupo = evaluacionesPorGrupo.get(f.grupoId)?.size ?? 0;
+    const totalEvaluacionesGrupo = (f.grupoId && evaluacionesPorGrupo.get(f.grupoId)?.size) || 0;
     const porcentajes = intentosEstudiante
       .map((i) => {
         const total = totalPorEvaluacion.get(i.evaluacionId) ?? 0;
@@ -148,7 +151,9 @@ export default async function ReportesPage({
       dni: f.dni,
       nombres: f.nombres,
       apellidos: f.apellidos,
-      grupo: `${f.sedeNombre} · ${modalidadEtiqueta[f.modalidad] ?? f.modalidad} · ${f.grupoNombre}`,
+      grupo: f.grupoNombre
+        ? `${f.sedeNombre} · ${modalidadEtiqueta[f.modalidad ?? ""] ?? f.modalidad} · ${f.grupoNombre}`
+        : "Sin grupo",
       estadoMatricula: f.estado,
       asistenciaPct,
       evaluacionesRendidas: `${intentosEstudiante.length}/${totalEvaluacionesGrupo}`,

@@ -51,7 +51,7 @@ export default async function AsistenciaPage({
   let existentes: Record<string, string> = {};
   const cursoActual = listaCursos.find((c) => c.id === cursoId);
 
-  if (cursoActual) {
+  if (cursoActual?.grupoId) {
     const matriculados = await db
       .select({
         estudianteId: estudiantes.id,

@@ -53,8 +53,8 @@ export default async function VigenciaPage({
       })
       .from(matriculas)
       .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
-      .innerJoin(grupos, eq(grupos.id, matriculas.grupoId))
-      .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
+      .leftJoin(grupos, eq(grupos.id, matriculas.grupoId))
+      .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
       .orderBy(desc(matriculas.fechaFin)),
   ]);
 
@@ -168,7 +168,14 @@ export default async function VigenciaPage({
                   {f.nombres} {f.apellidos}
                 </td>
                 <td className="px-4 py-3 text-ink-soft">
-                  {f.sedeNombre} · {modalidadEtiqueta[f.modalidad] ?? f.modalidad} · {f.grupoNombre}
+                  {f.grupoNombre ? (
+                    <>
+                      {f.sedeNombre} · {modalidadEtiqueta[f.modalidad ?? ""] ?? f.modalidad} ·{" "}
+                      {f.grupoNombre}
+                    </>
+                  ) : (
+                    <span className="italic text-ink-soft">Sin grupo</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.fechaIngreso}</td>
                 <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.fechaFin}</td>

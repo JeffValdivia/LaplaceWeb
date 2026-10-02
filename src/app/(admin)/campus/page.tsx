@@ -26,8 +26,8 @@ export default async function CampusPage() {
       })
       .from(recursos)
       .innerJoin(cursos, eq(cursos.id, recursos.cursoId))
-      .innerJoin(grupos, eq(grupos.id, cursos.grupoId))
-      .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
+      .leftJoin(grupos, eq(grupos.id, cursos.grupoId))
+      .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
       .innerJoin(asignaturas, eq(asignaturas.id, cursos.asignaturaId))
       .orderBy(desc(recursos.createdAt)),
     db
@@ -83,8 +83,16 @@ export default async function CampusPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-ink-soft">
-                  {r.sedeNombre} · {modalidadEtiqueta[r.grupoModalidad] ?? r.grupoModalidad} ·{" "}
-                  {r.grupoNombre} · {r.asignaturaNombre}
+                  {r.grupoNombre ? (
+                    <>
+                      {r.sedeNombre} · {modalidadEtiqueta[r.grupoModalidad ?? ""] ?? r.grupoModalidad} ·{" "}
+                      {r.grupoNombre} · {r.asignaturaNombre}
+                    </>
+                  ) : (
+                    <>
+                      <span className="italic">Sin grupo</span> · {r.asignaturaNombre}
+                    </>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-mono-tab text-xs text-ink-soft">
                   {r.createdAt.toLocaleDateString("es-PE")}

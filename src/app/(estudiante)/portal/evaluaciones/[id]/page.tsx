@@ -29,7 +29,7 @@ export default async function EvaluacionPortalPage({
     .from(cursos)
     .where(eq(cursos.id, evaluacion.cursoId))
     .limit(1);
-  if (!curso) notFound();
+  if (!curso || !curso.grupoId) notFound();
 
   const [matriculado] = await db
     .select({ id: matriculas.id })

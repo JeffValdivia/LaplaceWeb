@@ -41,8 +41,8 @@ export default async function PortalInicioPage() {
         sedeNombre: sedes.nombre,
       })
       .from(matriculas)
-      .innerJoin(grupos, eq(grupos.id, matriculas.grupoId))
-      .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
+      .leftJoin(grupos, eq(grupos.id, matriculas.grupoId))
+      .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
       .where(eq(matriculas.estudianteId, usuario.estudianteId))
       .orderBy(desc(matriculas.fechaIngreso)),
     db
@@ -67,9 +67,15 @@ export default async function PortalInicioPage() {
         <div className="rounded-lg border border-line bg-surface p-5">
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="font-medium text-ink">
-              {matricula.sedeNombre} ·{" "}
-              {modalidadEtiqueta[matricula.modalidad] ?? matricula.modalidad} ·{" "}
-              {matricula.grupoNombre}
+              {matricula.grupoNombre ? (
+                <>
+                  {matricula.sedeNombre} ·{" "}
+                  {modalidadEtiqueta[matricula.modalidad ?? ""] ?? matricula.modalidad} ·{" "}
+                  {matricula.grupoNombre}
+                </>
+              ) : (
+                <span className="italic">Sin grupo asignado</span>
+              )}
             </p>
             <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${estadoEstilo[estado]}`}>
               {estadoTexto[estado]}

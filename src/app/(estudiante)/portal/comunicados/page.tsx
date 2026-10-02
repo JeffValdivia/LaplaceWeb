@@ -12,7 +12,7 @@ export default async function ComunicadosPortalPage() {
     .select({ grupoId: matriculas.grupoId })
     .from(matriculas)
     .where(eq(matriculas.estudianteId, usuario.estudianteId));
-  const grupoIds = misGrupos.map((g) => g.grupoId);
+  const grupoIds = misGrupos.map((g) => g.grupoId).filter((id): id is string => id !== null);
 
   const filas = await db
     .select()

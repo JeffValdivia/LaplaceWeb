@@ -32,7 +32,7 @@ export async function entregarIntento(_prevState: string | null, formData: FormD
     .from(cursos)
     .where(eq(cursos.id, evaluacion.cursoId))
     .limit(1);
-  if (!curso) return "Ese curso ya no existe.";
+  if (!curso || !curso.grupoId) return "Ese curso ya no tiene un grupo asociado.";
 
   // El estudiante debe estar matriculado en el grupo del curso evaluado.
   const [matriculado] = await db
