@@ -1,56 +1,56 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { matriculas, estudiantes, grupos, sedes } from "@/lib/db/schema";
+import { matriculas, grupos, sedes } from "@/lib/db/schema";
 import { calcularEstado } from "@/lib/vigencia";
-import { marcarRetirada, renovarMatricula } from "../vigencia/actions";
-
-const estadoEstilo: Record<string, string> = {
-  activa: "bg-ok-soft text-ok",
-  por_vencer: "bg-warn-soft text-warn",
-  vencida: "bg-danger-soft text-danger",
-  retirada: "bg-line text-ink-soft",
-};
 
 const modalidadEtiqueta: Record<string, string> = {
   presencial: "Presencial",
   virtual: "Virtual",
 };
 
-const estadoTexto: Record<string, string> = {
-  activa: "Activa",
-  por_vencer: "Por vencer",
-  vencida: "Vencida",
-  retirada: "Retirada",
-};
-
 export default async function EstudiantesPage() {
-  const filasCrudas = await db
-    .select({
-      matriculaId: matriculas.id,
-      estudianteId: matriculas.estudianteId,
-      dni: estudiantes.dni,
-      nombres: estudiantes.nombres,
-      apellidos: estudiantes.apellidos,
-      fechaIngreso: matriculas.fechaIngreso,
-      fechaFin: matriculas.fechaFin,
-      retirada: matriculas.retirada,
-      grupoNombre: grupos.nombre,
-      modalidad: grupos.modalidad,
-      sedeNombre: sedes.nombre,
-    })
-    .from(matriculas)
-    .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
-    .innerJoin(grupos, eq(grupos.id, matriculas.grupoId))
-    .innerJoin(sedes, eq(sedes.id, grupos.sedeId))
-    .orderBy(desc(matriculas.fechaIngreso));
+  const [listaSedes, listaGrupos, matriculasCrudas] = await Promise.all([
+    db.select().from(sedes).orderBy(asc(sedes.nombre)),
+    db
+      .select({
+        id: grupos.id,
+        nombre: grupos.nombre,
+        modalidad: grupos.modalidad,
+        sedeId: grupos.sedeId,
+      })
+      .from(grupos)
+      .where(eq(grupos.activo, true))
+      .orderBy(asc(grupos.nombre)),
+    db
+      .select({
+        estudianteId: matriculas.estudianteId,
+        grupoId: matriculas.grupoId,
+        fechaIngreso: matriculas.fechaIngreso,
+        fechaFin: matriculas.fechaFin,
+        retirada: matriculas.retirada,
+      })
+      .from(matriculas)
+      .orderBy(desc(matriculas.fechaIngreso)),
+  ]);
 
-  // Nos quedamos con la matrícula más reciente de cada estudiante.
-  const porEstudiante = new Map<string, (typeof filasCrudas)[number]>();
-  for (const f of filasCrudas) {
-    if (!porEstudiante.has(f.estudianteId)) porEstudiante.set(f.estudianteId, f);
+  // Un estudiante puede tener varias matrículas (por renovaciones); para
+  // contar solo importa la más reciente de cada uno, igual que en el
+  // dashboard — si ya renovó, su matrícula vieja no debe seguir sumando.
+  const masRecientePorEstudiante = new Map<string, (typeof matriculasCrudas)[number]>();
+  for (const m of matriculasCrudas) {
+    if (!masRecientePorEstudiante.has(m.estudianteId)) {
+      masRecientePorEstudiante.set(m.estudianteId, m);
+    }
   }
-  const filas = [...porEstudiante.values()];
+
+  const conteoPorGrupo = new Map<string, number>();
+  for (const m of masRecientePorEstudiante.values()) {
+    if (!m.grupoId) continue;
+    const estado = calcularEstado(m.fechaFin, m.retirada);
+    if (estado === "retirada" || estado === "vencida") continue;
+    conteoPorGrupo.set(m.grupoId, (conteoPorGrupo.get(m.grupoId) ?? 0) + 1);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,89 +58,62 @@ export default async function EstudiantesPage() {
         <div>
           <h1 className="text-xl font-semibold text-ink">Estudiantes y matrículas</h1>
           <p className="text-sm text-ink-soft">
-            Toda matrícula dura 1 mes desde la fecha de ingreso; se avisa 5 días
-            antes de vencer.
+            Alumnos matriculados por grupo (activos y por vencer). El detalle,
+            renovaciones y retiros están en{" "}
+            <Link href="/vigencia" className="underline">
+              Vigencia de matrícula
+            </Link>
+            .
           </p>
         </div>
-        <Link
-          href="/estudiantes/nuevo"
-          className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
-        >
-          Matricular estudiante
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/estudiantes/importar"
+            className="rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+          >
+            Cargar Excel
+          </Link>
+          <Link
+            href="/estudiantes/nuevo"
+            className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
+          >
+            Matricular estudiante
+          </Link>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-        <table className="w-full min-w-[720px] text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-soft">
-              <th className="px-4 py-3 font-medium">DNI</th>
-              <th className="px-4 py-3 font-medium">Estudiante</th>
-              <th className="px-4 py-3 font-medium">Grupo</th>
-              <th className="px-4 py-3 font-medium">Ingreso</th>
-              <th className="px-4 py-3 font-medium">Vence</th>
-              <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium">Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f) => {
-              const estado = calcularEstado(f.fechaFin, f.retirada);
-              return (
-                <tr key={f.matriculaId} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.dni}</td>
-                  <td className="px-4 py-3 font-medium text-ink">
-                    {f.nombres} {f.apellidos}
-                  </td>
-                  <td className="px-4 py-3 text-ink-soft">
-                    {f.sedeNombre} · {modalidadEtiqueta[f.modalidad] ?? f.modalidad} · {f.grupoNombre}
-                  </td>
-                  <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.fechaIngreso}</td>
-                  <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.fechaFin}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${estadoEstilo[estado]}`}
-                    >
-                      {estadoTexto[estado]}
+      {listaSedes.map((s) => {
+        const gruposDeLaSede = listaGrupos.filter((g) => g.sedeId === s.id);
+        return (
+          <div
+            key={s.id}
+            className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5"
+          >
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-ink">
+              {s.nombre}
+            </h2>
+            {gruposDeLaSede.length ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {gruposDeLaSede.map((g) => (
+                  <div
+                    key={g.id}
+                    className="flex flex-col gap-1 rounded-lg border border-line bg-bg p-4"
+                  >
+                    <span className="text-xs text-ink-soft">
+                      {g.nombre} · {modalidadEtiqueta[g.modalidad] ?? g.modalidad}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <form action={renovarMatricula}>
-                        <input type="hidden" name="estudiante_id" value={f.estudianteId} />
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-brand-blue underline decoration-dotted hover:decoration-solid"
-                        >
-                          Renovar
-                        </button>
-                      </form>
-                      {estado !== "retirada" && (
-                        <form action={marcarRetirada}>
-                          <input type="hidden" name="id" value={f.matriculaId} />
-                          <button
-                            type="submit"
-                            className="text-xs text-danger underline decoration-dotted hover:decoration-solid"
-                          >
-                            Marcar retiro
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {!filas.length && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-ink-soft">
-                  Todavía no hay estudiantes matriculados.
-                </td>
-              </tr>
+                    <span className="font-mono-tab text-2xl font-semibold text-ink">
+                      {conteoPorGrupo.get(g.id) ?? 0}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm italic text-ink-soft">Esta sede todavía no tiene grupos.</p>
             )}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -32,6 +32,11 @@ export const usuarios = pgTable(
     // borrar un estudiante mientras tenga una cuenta de acceso vinculada,
     // en vez de dejarla huérfana silenciosamente.
     estudianteId: uuid("estudiante_id").references(() => estudiantes.id),
+    // Se marca true en cuentas creadas por el staff con contraseña
+    // provisional (ej. carga masiva por Excel, contraseña = DNI) para
+    // forzar que la cambien en su primer ingreso. Las cuentas que eligen
+    // su propia contraseña (autoregistro) quedan en false.
+    debeCambiarPassword: boolean("debe_cambiar_password").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

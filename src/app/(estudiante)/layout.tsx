@@ -24,6 +24,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   if (usuario.rol !== "estudiante") {
     redirect(usuario.rol === "docente" ? "/docente" : "/dashboard");
   }
+  if (usuario.debeCambiarPassword) redirect("/cambiar-password");
 
   const [ultimaMatricula] = usuario.estudianteId
     ? await db

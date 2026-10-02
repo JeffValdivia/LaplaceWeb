@@ -39,6 +39,7 @@ export async function obtenerUsuarioActual() {
       nombreCompleto: usuarios.nombreCompleto,
       rol: usuarios.rol,
       estudianteId: usuarios.estudianteId,
+      debeCambiarPassword: usuarios.debeCambiarPassword,
       expiresAt: sesiones.expiresAt,
     })
     .from(sesiones)
@@ -58,6 +59,7 @@ export async function obtenerUsuarioActual() {
     nombreCompleto: fila.nombreCompleto,
     rol: fila.rol,
     estudianteId: fila.estudianteId,
+    debeCambiarPassword: fila.debeCambiarPassword,
   };
 }
 

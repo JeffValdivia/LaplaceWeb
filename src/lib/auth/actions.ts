@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { usuarios, estudiantes, matriculas, grupos, sedes } from "@/lib/db/schema";
 import { verifyPassword, hashPassword } from "./password";
-import { crearSesion, cerrarSesion as borrarSesion } from "./session";
+import { crearSesion, cerrarSesion as borrarSesion, obtenerUsuarioActual } from "./session";
 import { sumarUnMes } from "@/lib/vigencia";
 
 const PROCESOS_POR_SEDE: Record<string, string[]> = {
@@ -157,3 +157,26 @@ export async function cerrarSesion() {
   redirect("/login");
 }
 
+// Cambio de contraseña obligatorio para cuentas creadas por el staff con
+// contraseña provisional (ej. carga masiva por Excel). No pide la
+// contraseña actual: ya se autenticó para llegar hasta aquí.
+export async function cambiarPasswordForzado(_prevState: string | null, formData: FormData) {
+  const usuario = await obtenerUsuarioActual();
+  if (!usuario) redirect("/login");
+
+  const password = String(formData.get("password") ?? "");
+  const confirmacion = String(formData.get("confirmacion") ?? "");
+
+  if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres.";
+  if (password !== confirmacion) return "Las contraseñas no coinciden.";
+
+  const passwordHash = await hashPassword(password);
+  await db
+    .update(usuarios)
+    .set({ passwordHash, debeCambiarPassword: false })
+    .where(eq(usuarios.id, usuario.id));
+
+  if (usuario.rol === "docente") redirect("/docente");
+  if (usuario.rol === "estudiante") redirect("/portal");
+  redirect("/dashboard");
+}
