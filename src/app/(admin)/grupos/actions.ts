@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { grupos, cursos } from "@/lib/db/schema";
+import { grupos, cursos, asignaturas } from "@/lib/db/schema";
+import { docenteValidoParaSede } from "@/lib/docentes";
 
 // Rutas que leen `grupos` (directamente o filtrando por `activo`) y por eso
 // necesitan invalidarse cuando un grupo se edita, elimina o retira.
@@ -57,14 +58,34 @@ export async function eliminarGrupo(formData: FormData) {
   revalidarVistasDeGrupos(sedeId);
 }
 
+async function sedeDelGrupo(grupoId: string) {
+  const [g] = await db
+    .select({ sedeId: grupos.sedeId })
+    .from(grupos)
+    .where(eq(grupos.id, grupoId))
+    .limit(1);
+  return g?.sedeId ?? null;
+}
+
 export async function agregarCurso(formData: FormData) {
   const grupoId = String(formData.get("grupo_id") ?? "");
   const asignaturaId = String(formData.get("asignatura_id") ?? "");
   const docenteId = String(formData.get("docente_id") ?? "");
   if (!grupoId || !asignaturaId || !docenteId) return;
 
+  const sedeId = await sedeDelGrupo(grupoId);
+  if (!sedeId) return;
+  const [asignatura] = await db
+    .select({ id: asignaturas.id })
+    .from(asignaturas)
+    .where(and(eq(asignaturas.id, asignaturaId), eq(asignaturas.sedeId, sedeId)))
+    .limit(1);
+  if (!asignatura || !(await docenteValidoParaSede(docenteId, sedeId))) return;
+
   await db.insert(cursos).values({ grupoId, asignaturaId, docenteId });
   revalidatePath(`/grupos/${grupoId}`);
+  revalidatePath("/grupos");
+  revalidatePath("/sedes");
 }
 
 export async function actualizarDocenteCurso(formData: FormData) {
@@ -73,8 +94,13 @@ export async function actualizarDocenteCurso(formData: FormData) {
   const docenteId = String(formData.get("docente_id") ?? "");
   if (!cursoId || !grupoId || !docenteId) return;
 
+  const sedeId = await sedeDelGrupo(grupoId);
+  if (!sedeId || !(await docenteValidoParaSede(docenteId, sedeId))) return;
+
   await db.update(cursos).set({ docenteId }).where(eq(cursos.id, cursoId));
   revalidatePath(`/grupos/${grupoId}`);
+  revalidatePath("/grupos");
+  revalidatePath("/sedes");
 }
 
 export async function quitarCurso(formData: FormData) {

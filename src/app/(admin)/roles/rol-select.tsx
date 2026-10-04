@@ -2,7 +2,7 @@
 
 import { actualizarRol } from "./actions";
 
-const roles = ["admin", "docente", "estudiante"] as const;
+const roles = ["admin", "docente"] as const;
 
 export function RolSelect({ id, rolActual }: { id: string; rolActual: string }) {
   return (

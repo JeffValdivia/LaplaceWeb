@@ -17,6 +17,7 @@ export const navItems: NavItem[] = [
   { item: "07", nombre: "Evaluaciones virtuales", href: "/evaluaciones", fase: 2, listo: true },
   { item: "08", nombre: "Asistencia", href: "/asistencia", fase: 2, listo: true },
   { item: "09", nombre: "Notificaciones oficiales", href: "/notificaciones", fase: 2, listo: true },
+  { item: "13", nombre: "Eventos del calendario", href: "/eventos", fase: 2, listo: true },
   { item: "10", nombre: "Portal del estudiante", href: "/portal", fase: 3, listo: true },
   { item: "11", nombre: "Módulo central de reportes", href: "/reportes", fase: 3, listo: true },
 ];
