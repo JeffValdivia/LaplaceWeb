@@ -37,6 +37,10 @@ export const usuarios = pgTable(
     // forzar que la cambien en su primer ingreso. Las cuentas que eligen
     // su propia contraseña (autoregistro) quedan en false.
     debeCambiarPassword: boolean("debe_cambiar_password").notNull().default(false),
+    // Solo para docentes: sede donde dicta. Al asignar cursos de un grupo
+    // solo se ofrecen los docentes de la sede de ese grupo. Nulo = docente
+    // aún sin sede asignada (se ofrece en ambas hasta que se le asigne una).
+    sedeId: uuid("sede_id").references(() => sedes.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -88,12 +92,26 @@ export const grupos = pgTable(
 );
 
 // ── Asignaturas (catálogo de materias) ───────────────────────────────────
-export const asignaturas = pgTable("asignaturas", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  nombre: text("nombre").notNull().unique(),
-  activo: boolean("activo").notNull().default(true),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+// Una asignatura es propia de una sede: el mismo nombre ("Álgebra") puede
+// existir por separado en UCSM y en UNSA, porque cada una se dicta con
+// docentes distintos — el catálogo ya no es compartido entre sedes.
+export const asignaturas = pgTable(
+  "asignaturas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nombre: text("nombre").notNull(),
+    sedeId: uuid("sede_id")
+      .notNull()
+      .references(() => sedes.id),
+    // Docente que se propone automáticamente al agregar esta asignatura a
+    // un grupo. Cada curso guarda su propio docente, así que cambiar este
+    // valor no altera los cursos ya creados (salvo que se pida aplicarlo).
+    docenteId: uuid("docente_id").references(() => usuarios.id, { onDelete: "set null" }),
+    activo: boolean("activo").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("asignaturas_nombre_sede").on(t.nombre, t.sedeId)]
+);
 
 // ── Cursos: la materia que un docente dicta dentro de un grupo ──────────
 // Un grupo puede tener varios cursos (una fila por materia); un docente
@@ -301,4 +319,30 @@ export const comunicados = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [check("comunicados_alcance_check", sql`${t.alcance} in ('academia','grupo')`)]
+);
+
+// ── Eventos del calendario académico ─────────────────────────────────────
+// Marcas de fecha para el calendario del portal del estudiante (exámenes,
+// revisiones/entregas, avisos puntuales). A diferencia de `evaluaciones`
+// (que requiere un curso con preguntas), un evento es solo título + fecha,
+// y a diferencia de `comunicados` puede dirigirse también a una sede
+// completa, no solo a toda la academia o a un grupo.
+export const eventos = pgTable(
+  "eventos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    titulo: text("titulo").notNull(),
+    descripcion: text("descripcion"),
+    fecha: date("fecha").notNull(),
+    tipo: text("tipo").notNull(),
+    alcance: text("alcance").notNull(),
+    sedeId: uuid("sede_id").references(() => sedes.id),
+    grupoId: uuid("grupo_id").references(() => grupos.id, { onDelete: "cascade" }),
+    creadoPor: uuid("creado_por").references(() => usuarios.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("eventos_tipo_check", sql`${t.tipo} in ('academico','examen','entrega')`),
+    check("eventos_alcance_check", sql`${t.alcance} in ('academia','sede','grupo')`),
+  ]
 );

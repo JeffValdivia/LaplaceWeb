@@ -11,6 +11,7 @@ import { calcularEstado, diasParaVencer } from "@/lib/vigencia";
 
 const enlaces = [
   { href: "/portal", label: "Inicio" },
+  { href: "/portal/calendario", label: "Calendario" },
   { href: "/portal/recursos", label: "Campus virtual" },
   { href: "/portal/evaluaciones", label: "Evaluaciones" },
   { href: "/portal/asistencia", label: "Asistencia" },
