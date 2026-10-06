@@ -44,7 +44,7 @@ export default async function EventosPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Eventos del calendario</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Eventos del calendario</h1>
         <p className="text-sm text-ink-soft">
           Programa exámenes, entregas y avisos para toda la academia, una sede
           o un grupo — aparecen automáticamente en el calendario del alumno.
@@ -57,7 +57,7 @@ export default async function EventosPage() {
         {filas.map((e) => (
           <div
             key={e.id}
-            className="flex items-start justify-between gap-4 rounded-lg border border-line bg-surface p-4"
+            className="flex items-start justify-between gap-4 surface-card p-4"
           >
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -90,7 +90,7 @@ export default async function EventosPage() {
           </div>
         ))}
         {!filas.length && (
-          <p className="rounded-lg border border-line bg-surface px-4 py-6 text-center text-sm text-ink-soft">
+          <p className="surface-card px-4 py-6 text-center text-sm text-ink-soft">
             Todavía no hay eventos programados.
           </p>
         )}

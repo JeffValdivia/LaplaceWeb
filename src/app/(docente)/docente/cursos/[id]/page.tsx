@@ -34,6 +34,8 @@ export default async function CursoDocentePage({
     { href: `/docente/cursos/${id}/recursos`, label: "Campus virtual" },
     { href: `/docente/cursos/${id}/evaluaciones`, label: "Evaluaciones" },
     { href: `/docente/cursos/${id}/asistencia`, label: "Asistencia" },
+    { href: `/docente/cursos/${id}/avance`, label: "Avance de clase" },
+    { href: `/docente/cursos/${id}/evaluacion-docente`, label: "Evaluación de mis alumnos" },
   ];
 
   return (
@@ -49,7 +51,7 @@ export default async function CursoDocentePage({
         <p className="text-sm text-ink-soft">{curso.grupoNombre ?? "Sin grupo"}</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {enlaces.map((e) => (
           <Link
             key={e.href}

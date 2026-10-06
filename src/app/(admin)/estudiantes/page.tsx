@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { matriculas, grupos, sedes } from "@/lib/db/schema";
+import { matriculas, grupos, sedes, estudiantes, carreras } from "@/lib/db/schema";
 import { calcularEstado } from "@/lib/vigencia";
+import { temaPorSede } from "@/lib/tema-sede";
+import { GrupoAlumnosCard, type AlumnoGrupo } from "./grupo-alumnos-card";
+import { MatricularEstudianteModal } from "./matricular-modal";
 
 const modalidadEtiqueta: Record<string, string> = {
   presencial: "Presencial",
@@ -10,7 +13,7 @@ const modalidadEtiqueta: Record<string, string> = {
 };
 
 export default async function EstudiantesPage() {
-  const [listaSedes, listaGrupos, matriculasCrudas] = await Promise.all([
+  const [listaSedes, listaGrupos, listaCarreras, matriculasCrudas] = await Promise.all([
     db.select().from(sedes).orderBy(asc(sedes.nombre)),
     db
       .select({
@@ -23,14 +26,23 @@ export default async function EstudiantesPage() {
       .where(eq(grupos.activo, true))
       .orderBy(asc(grupos.nombre)),
     db
+      .select({ id: carreras.id, nombre: carreras.nombre })
+      .from(carreras)
+      .where(eq(carreras.activo, true))
+      .orderBy(asc(carreras.nombre)),
+    db
       .select({
         estudianteId: matriculas.estudianteId,
         grupoId: matriculas.grupoId,
         fechaIngreso: matriculas.fechaIngreso,
         fechaFin: matriculas.fechaFin,
         retirada: matriculas.retirada,
+        dni: estudiantes.dni,
+        nombres: estudiantes.nombres,
+        apellidos: estudiantes.apellidos,
       })
       .from(matriculas)
+      .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
       .orderBy(desc(matriculas.fechaIngreso)),
   ]);
 
@@ -44,19 +56,30 @@ export default async function EstudiantesPage() {
     }
   }
 
-  const conteoPorGrupo = new Map<string, number>();
+  const alumnosPorGrupo = new Map<string, AlumnoGrupo[]>();
   for (const m of masRecientePorEstudiante.values()) {
     if (!m.grupoId) continue;
     const estado = calcularEstado(m.fechaFin, m.retirada);
     if (estado === "retirada" || estado === "vencida") continue;
-    conteoPorGrupo.set(m.grupoId, (conteoPorGrupo.get(m.grupoId) ?? 0) + 1);
+    const lista = alumnosPorGrupo.get(m.grupoId) ?? [];
+    lista.push({
+      dni: m.dni,
+      nombres: m.nombres,
+      apellidos: m.apellidos,
+      fechaFin: m.fechaFin,
+      estado,
+    });
+    alumnosPorGrupo.set(m.grupoId, lista);
+  }
+  for (const lista of alumnosPorGrupo.values()) {
+    lista.sort((a, b) => a.apellidos.localeCompare(b.apellidos));
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Estudiantes y matrículas</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Estudiantes y matrículas</h1>
           <p className="text-sm text-ink-soft">
             Alumnos matriculados por grupo (activos y por vencer). El detalle,
             renovaciones y retiros están en{" "}
@@ -73,12 +96,7 @@ export default async function EstudiantesPage() {
           >
             Cargar Excel
           </Link>
-          <Link
-            href="/estudiantes/nuevo"
-            className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
-          >
-            Matricular estudiante
-          </Link>
+          <MatricularEstudianteModal sedes={listaSedes} grupos={listaGrupos} carreras={listaCarreras} />
         </div>
       </div>
 
@@ -87,7 +105,7 @@ export default async function EstudiantesPage() {
         return (
           <div
             key={s.id}
-            className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5"
+            className="flex flex-col gap-4 surface-card p-5"
           >
             <h2 className="text-sm font-semibold uppercase tracking-wide text-ink">
               {s.nombre}
@@ -95,17 +113,14 @@ export default async function EstudiantesPage() {
             {gruposDeLaSede.length ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {gruposDeLaSede.map((g) => (
-                  <div
+                  <GrupoAlumnosCard
                     key={g.id}
-                    className="flex flex-col gap-1 rounded-lg border border-line bg-bg p-4"
-                  >
-                    <span className="text-xs text-ink-soft">
-                      {g.nombre} · {modalidadEtiqueta[g.modalidad] ?? g.modalidad}
-                    </span>
-                    <span className="font-mono-tab text-2xl font-semibold text-ink">
-                      {conteoPorGrupo.get(g.id) ?? 0}
-                    </span>
-                  </div>
+                    grupoId={g.id}
+                    nombre={g.nombre}
+                    modalidad={modalidadEtiqueta[g.modalidad] ?? g.modalidad}
+                    alumnos={alumnosPorGrupo.get(g.id) ?? []}
+                    tema={temaPorSede[s.nombre]}
+                  />
                 ))}
               </div>
             ) : (

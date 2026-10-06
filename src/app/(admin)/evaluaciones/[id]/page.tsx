@@ -59,7 +59,7 @@ export default async function EvaluacionDetallePage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">{evaluacion.titulo}</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">{evaluacion.titulo}</h1>
         <p className="text-sm text-ink-soft">
           {evaluacion.grupoNombre ? (
             <>
@@ -77,7 +77,7 @@ export default async function EvaluacionDetallePage({
 
       <div className="flex flex-col gap-4">
         {listaPreguntas.map((p, i) => (
-          <div key={p.id} className="rounded-lg border border-line bg-surface p-5">
+          <div key={p.id} className="surface-card p-5">
             <p className="mb-3 font-medium text-ink">
               {i + 1}. {p.enunciado}{" "}
               <span className="font-mono-tab text-xs text-ink-soft">
@@ -120,7 +120,7 @@ export default async function EvaluacionDetallePage({
 
       <form
         action={crearPregunta}
-        className="flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface p-5"
+        className="flex flex-wrap items-end gap-3 surface-card p-5"
       >
         <input type="hidden" name="evaluacion_id" value={id} />
         <label className="flex flex-1 flex-col gap-1.5 text-sm">
@@ -144,7 +144,7 @@ export default async function EvaluacionDetallePage({
         </label>
         <button
           type="submit"
-          className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
+          className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
         >
           Agregar pregunta
         </button>

@@ -30,13 +30,14 @@ export default async function AsistenciaDocentePage({
     .limit(1);
   if (!curso) notFound();
 
-  const matriculados = curso.grupoId
+  const matriculasCrudas = curso.grupoId
     ? await db
         .select({
           estudianteId: estudiantes.id,
           dni: estudiantes.dni,
           nombres: estudiantes.nombres,
           apellidos: estudiantes.apellidos,
+          fechaIngreso: matriculas.fechaIngreso,
           fechaFin: matriculas.fechaFin,
           retirada: matriculas.retirada,
         })
@@ -45,6 +46,20 @@ export default async function AsistenciaDocentePage({
         .where(eq(matriculas.grupoId, curso.grupoId))
         .orderBy(asc(estudiantes.apellidos))
     : [];
+
+  // Un estudiante puede tener varias matrículas en el mismo grupo (por
+  // renovaciones) — solo la más reciente cuenta, igual que en el resto del
+  // sistema. Sin esto, salía duplicado en la lista de asistencia.
+  const masRecientePorEstudiante = new Map<string, (typeof matriculasCrudas)[number]>();
+  for (const m of matriculasCrudas) {
+    const actual = masRecientePorEstudiante.get(m.estudianteId);
+    if (!actual || m.fechaIngreso > actual.fechaIngreso) {
+      masRecientePorEstudiante.set(m.estudianteId, m);
+    }
+  }
+  const matriculados = [...masRecientePorEstudiante.values()].sort((a, b) =>
+    a.apellidos.localeCompare(b.apellidos)
+  );
 
   const roster = matriculados.filter((m) => {
     const estado = calcularEstado(m.fechaFin, m.retirada);

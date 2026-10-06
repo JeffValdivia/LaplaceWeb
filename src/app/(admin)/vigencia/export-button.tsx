@@ -1,6 +1,6 @@
 "use client";
 
-type Fila = {
+export type Fila = {
   dni: string;
   nombres: string;
   apellidos: string;

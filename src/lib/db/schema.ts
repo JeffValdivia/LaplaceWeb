@@ -4,6 +4,7 @@ import {
   text,
   boolean,
   date,
+  time,
   timestamp,
   numeric,
   integer,
@@ -135,6 +136,42 @@ export const cursos = pgTable(
   (t) => [unique("cursos_grupo_asignatura").on(t.grupoId, t.asignaturaId)]
 );
 
+// ── Avance de clase: registro del docente de qué se dictó en cada sesión ──
+// Es el "libro de clases": una fila por sesión dictada, con el tema
+// cubierto. Sirve para que el docente lleve su propio historial de avance
+// del curso (no afecta evaluaciones ni asistencia, son registros aparte).
+export const avancesClase = pgTable("avances_clase", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cursoId: uuid("curso_id")
+    .notNull()
+    .references(() => cursos.id, { onDelete: "cascade" }),
+  fecha: date("fecha").notNull(),
+  tema: text("tema").notNull(),
+  descripcion: text("descripcion"),
+  registradoPor: uuid("registrado_por").references(() => usuarios.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Imágenes y archivos adjuntos a un avance (no van dentro del texto en sí
+// — se muestran aparte, como adjuntos, igual que un correo). Reutiliza el
+// mismo almacenamiento en disco que "Campus virtual" (recursos).
+export const avancesAdjuntos = pgTable(
+  "avances_adjuntos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    avanceId: uuid("avance_id")
+      .notNull()
+      .references(() => avancesClase.id, { onDelete: "cascade" }),
+    tipo: text("tipo").notNull(),
+    nombre: text("nombre").notNull(),
+    archivoPath: text("archivo_path").notNull(),
+    tipoArchivo: text("tipo_archivo"),
+    tamanoBytes: integer("tamano_bytes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("avances_adjuntos_tipo_check", sql`${t.tipo} in ('imagen','archivo')`)]
+);
+
 // ── Estudiantes (módulo 02) ──────────────────────────────────────────────
 export const estudiantes = pgTable("estudiantes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -221,6 +258,11 @@ export const evaluaciones = pgTable("evaluaciones", {
   descripcion: text("descripcion"),
   disponibleDesde: timestamp("disponible_desde", { withTimezone: true }),
   disponibleHasta: timestamp("disponible_hasta", { withTimezone: true }),
+  // Cronómetro por intento (no confundir con disponibleDesde/Hasta, que es
+  // la ventana en que se puede empezar). Nulo = sin límite de tiempo. Se
+  // cuenta desde que el alumno inicia su intento (intentos.iniciadoAt), no
+  // desde que abre la evaluación.
+  duracionMinutos: integer("duracion_minutos"),
   creadoPor: uuid("creado_por").references(() => usuarios.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -345,4 +387,98 @@ export const eventos = pgTable(
     check("eventos_tipo_check", sql`${t.tipo} in ('academico','examen','entrega')`),
     check("eventos_alcance_check", sql`${t.alcance} in ('academia','sede','grupo')`),
   ]
+);
+
+// ── Horarios de grupo ─────────────────────────────────────────────────────
+// Bloques semanales recurrentes (no fechas puntuales — para eso están los
+// `eventos`). cursoId es opcional: un bloque puede ser solo "Lunes 8-10"
+// sin asociar una asignatura específica, o amarrarse a un curso del grupo
+// para mostrar qué se dicta en ese horario.
+export const horarios = pgTable(
+  "horarios",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    grupoId: uuid("grupo_id")
+      .notNull()
+      .references(() => grupos.id, { onDelete: "cascade" }),
+    cursoId: uuid("curso_id").references(() => cursos.id, { onDelete: "set null" }),
+    diaSemana: integer("dia_semana").notNull(),
+    horaInicio: time("hora_inicio").notNull(),
+    horaFin: time("hora_fin").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("horarios_dia_semana_check", sql`${t.diaSemana} between 1 and 7`)]
+);
+
+// ── Evaluación a docente (encuesta de opinión, no de conocimiento) ───────
+// Banco de preguntas compartido por toda la academia (a diferencia de
+// `preguntas`/`evaluaciones`, que son de un curso puntual): el admin define
+// una sola vez el cuestionario y se reutiliza para evaluar a cualquier
+// docente en cualquier curso. Es de opinión, no tiene alternativa correcta.
+export const preguntasEvalDocente = pgTable("preguntas_eval_docente", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  enunciado: text("enunciado").notNull(),
+  orden: integer("orden").notNull().default(0),
+  activo: boolean("activo").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const alternativasEvalDocente = pgTable("alternativas_eval_docente", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  preguntaId: uuid("pregunta_id")
+    .notNull()
+    .references(() => preguntasEvalDocente.id, { onDelete: "cascade" }),
+  texto: text("texto").notNull(),
+  orden: integer("orden").notNull().default(0),
+});
+
+// Una fila por alumno por curso: el envío completo (sus respuestas +
+// comentario final). El comentario va aquí, no por pregunta, porque es "al
+// final" del cuestionario, sobre el docente en general.
+export const evaluacionesDocente = pgTable(
+  "evaluaciones_docente",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    cursoId: uuid("curso_id")
+      .notNull()
+      .references(() => cursos.id, { onDelete: "cascade" }),
+    estudianteId: uuid("estudiante_id")
+      .notNull()
+      .references(() => estudiantes.id, { onDelete: "cascade" }),
+    comentario: text("comentario"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("evaluaciones_docente_curso_estudiante").on(t.cursoId, t.estudianteId)]
+);
+
+export const respuestasEvalDocente = pgTable(
+  "respuestas_eval_docente",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    evaluacionDocenteId: uuid("evaluacion_docente_id")
+      .notNull()
+      .references(() => evaluacionesDocente.id, { onDelete: "cascade" }),
+    preguntaId: uuid("pregunta_id")
+      .notNull()
+      .references(() => preguntasEvalDocente.id),
+    alternativaId: uuid("alternativa_id")
+      .notNull()
+      .references(() => alternativasEvalDocente.id),
+  },
+  (t) => [unique("respuestas_eval_docente_unica").on(t.evaluacionDocenteId, t.preguntaId)]
+);
+
+// Interruptor global: el alumno solo puede enviar su evaluación mientras el
+// admin la tiene activada (ej. solo en la semana que la academia decide
+// aplicarla). Fila única (id fijo = 1) — "no existe fila" se trata como
+// desactivado, así no hace falta sembrarla en una migración.
+export const evaluacionDocenteConfig = pgTable(
+  "evaluacion_docente_config",
+  {
+    id: integer("id").primaryKey().default(1),
+    activo: boolean("activo").notNull().default(false),
+    actualizadoPor: uuid("actualizado_por").references(() => usuarios.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("evaluacion_docente_config_singleton", sql`${t.id} = 1`)]
 );

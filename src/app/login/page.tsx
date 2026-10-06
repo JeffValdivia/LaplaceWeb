@@ -13,7 +13,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-lg border border-line bg-surface p-8 shadow-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <Image
-            src="/brand/logo-laplace.png"
+            src="/brand/log-laplace.png"
             alt="Academia Laplace"
             width={96}
             height={96}

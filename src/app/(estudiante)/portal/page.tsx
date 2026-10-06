@@ -2,9 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq, or } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { matriculas, grupos, sedes, comunicados } from "@/lib/db/schema";
+import { matriculas, grupos, sedes, comunicados, horarios } from "@/lib/db/schema";
 import { calcularEstado } from "@/lib/vigencia";
 import { obtenerUsuarioActual } from "@/lib/auth/session";
+import { diaSemanaTexto, formatearHora } from "@/lib/horarios";
 
 const estadoTexto: Record<string, string> = {
   activa: "Activa",
@@ -56,6 +57,22 @@ export default async function PortalInicioPage() {
   const matricula = matriculasFilas[0];
   const estado = matricula ? calcularEstado(matricula.fechaFin, matricula.retirada) : null;
 
+  const horarioGrupo = matricula?.grupoId
+    ? (
+        await db
+          .select({
+            id: horarios.id,
+            diaSemana: horarios.diaSemana,
+            horaInicio: horarios.horaInicio,
+            horaFin: horarios.horaFin,
+          })
+          .from(horarios)
+          .where(eq(horarios.grupoId, matricula.grupoId))
+      ).sort((a, b) =>
+        a.diaSemana !== b.diaSemana ? a.diaSemana - b.diaSemana : a.horaInicio.localeCompare(b.horaInicio)
+      )
+    : [];
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -84,6 +101,19 @@ export default async function PortalInicioPage() {
           <p className="font-mono-tab text-sm text-ink-soft">
             {matricula.fechaIngreso} → {matricula.fechaFin}
           </p>
+          {!!horarioGrupo.length && (
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+              {horarioGrupo.map((h) => (
+                <span
+                  key={h.id}
+                  className="rounded-md border border-line bg-bg px-3 py-1.5 text-xs text-ink"
+                >
+                  <span className="font-medium">{diaSemanaTexto[h.diaSemana]}</span>{" "}
+                  {formatearHora(h.horaInicio)}–{formatearHora(h.horaFin)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <p className="rounded-lg border border-line bg-surface px-4 py-6 text-center text-sm text-ink-soft">
@@ -115,6 +145,12 @@ export default async function PortalInicioPage() {
           className="rounded-lg border border-line bg-surface p-4 text-center font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
         >
           Comunicados
+        </Link>
+        <Link
+          href="/portal/evaluacion-docente"
+          className="rounded-lg border border-line bg-surface p-4 text-center font-medium text-ink transition hover:border-brand-blue hover:text-brand-blue"
+        >
+          Evaluar docentes
         </Link>
       </div>
 

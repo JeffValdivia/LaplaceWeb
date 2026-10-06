@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/lib/db/schema";
 import { calcularEstado } from "@/lib/vigencia";
 import { ExportarReporteButton } from "./export-button";
+import { SelectorReportes, type GrupoOpcion } from "./selector";
 
 const estadoEstilo: Record<string, string> = {
   activa: "bg-ok-soft text-ok",
@@ -21,23 +23,21 @@ const estadoEstilo: Record<string, string> = {
   retirada: "bg-line text-ink-soft",
 };
 
-const modalidadEtiqueta: Record<string, string> = {
-  presencial: "Presencial",
-  virtual: "Virtual",
-};
-
 export default async function ReportesPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
+  const grupoId = typeof params.grupo_id === "string" ? params.grupo_id : "";
   const filtroEstado = typeof params.estado === "string" ? params.estado : "";
-  const filtroSede = typeof params.sede === "string" ? params.sede : "";
-  const filtroModalidad = typeof params.modalidad === "string" ? params.modalidad : "";
 
-  const [listaSedes, filasCrudas] = await Promise.all([
-    db.select().from(sedes).orderBy(asc(sedes.nombre)),
+  const [listaSedes, listaGrupos, filasCrudas] = await Promise.all([
+    db.select({ id: sedes.id, nombre: sedes.nombre }).from(sedes).orderBy(asc(sedes.nombre)),
+    db
+      .select({ id: grupos.id, nombre: grupos.nombre, modalidad: grupos.modalidad, sedeId: grupos.sedeId })
+      .from(grupos)
+      .orderBy(asc(grupos.nombre)),
     db
       .select({
         estudianteId: estudiantes.id,
@@ -46,8 +46,6 @@ export default async function ReportesPage({
         apellidos: estudiantes.apellidos,
         grupoId: grupos.id,
         grupoNombre: grupos.nombre,
-        modalidad: grupos.modalidad,
-        sedeNombre: sedes.nombre,
         fechaIngreso: matriculas.fechaIngreso,
         fechaFin: matriculas.fechaFin,
         retirada: matriculas.retirada,
@@ -55,7 +53,6 @@ export default async function ReportesPage({
       .from(matriculas)
       .innerJoin(estudiantes, eq(estudiantes.id, matriculas.estudianteId))
       .leftJoin(grupos, eq(grupos.id, matriculas.grupoId))
-      .leftJoin(sedes, eq(sedes.id, grupos.sedeId))
       .orderBy(desc(matriculas.fechaIngreso)),
   ]);
 
@@ -68,17 +65,38 @@ export default async function ReportesPage({
     }
   }
 
-  const filasFiltradas = [...masRecientePorEstudiante.values()]
-    .map((f) => ({ ...f, estado: calcularEstado(f.fechaFin, f.retirada) }))
-    .filter((f) => !filtroEstado || f.estado === filtroEstado)
-    .filter((f) => !filtroSede || f.sedeNombre === filtroSede)
-    .filter((f) => !filtroModalidad || f.modalidad === filtroModalidad)
-    .sort((a, b) => a.apellidos.localeCompare(b.apellidos));
+  const todasConEstado = [...masRecientePorEstudiante.values()].map((f) => ({
+    ...f,
+    estado: calcularEstado(f.fechaFin, f.retirada),
+  }));
 
-  const estudianteIds = [...new Set(filasFiltradas.map((f) => f.estudianteId))];
-  const grupoIds = [
-    ...new Set(filasFiltradas.map((f) => f.grupoId).filter((id): id is string => id !== null)),
-  ];
+  const conteoVigentesPorGrupo = new Map<string, number>();
+  for (const f of todasConEstado) {
+    if (!f.grupoId || (f.estado !== "activa" && f.estado !== "por_vencer")) continue;
+    conteoVigentesPorGrupo.set(f.grupoId, (conteoVigentesPorGrupo.get(f.grupoId) ?? 0) + 1);
+  }
+
+  const opcionesGrupos: GrupoOpcion[] = listaGrupos.map((g) => ({
+    id: g.id,
+    nombre: g.nombre,
+    modalidad: g.modalidad,
+    sedeId: g.sedeId,
+    totalAlumnos: conteoVigentesPorGrupo.get(g.id) ?? 0,
+  }));
+
+  const grupoSeleccionado = grupoId ? listaGrupos.find((g) => g.id === grupoId) ?? null : null;
+  const sedeDelGrupo = grupoSeleccionado
+    ? listaSedes.find((s) => s.id === grupoSeleccionado.sedeId) ?? null
+    : null;
+
+  const filasFiltradas = grupoSeleccionado
+    ? todasConEstado
+        .filter((f) => f.grupoId === grupoSeleccionado.id)
+        .filter((f) => !filtroEstado || f.estado === filtroEstado)
+        .sort((a, b) => a.apellidos.localeCompare(b.apellidos))
+    : [];
+
+  const estudianteIds = filasFiltradas.map((f) => f.estudianteId);
 
   const [asistenciasFilas, evaluacionesFilas, intentosFilas] = await Promise.all([
     estudianteIds.length
@@ -87,13 +105,13 @@ export default async function ReportesPage({
           .from(asistencias)
           .where(inArray(asistencias.estudianteId, estudianteIds))
       : Promise.resolve([]),
-    grupoIds.length
+    grupoSeleccionado
       ? db
           .select({ id: evaluaciones.id, grupoId: cursos.grupoId, puntaje: preguntas.puntaje })
           .from(evaluaciones)
           .innerJoin(cursos, eq(cursos.id, evaluaciones.cursoId))
           .leftJoin(preguntas, eq(preguntas.evaluacionId, evaluaciones.id))
-          .where(inArray(cursos.grupoId, grupoIds))
+          .where(eq(cursos.grupoId, grupoSeleccionado.id))
       : Promise.resolve([]),
     estudianteIds.length
       ? db
@@ -115,13 +133,7 @@ export default async function ReportesPage({
       (totalPorEvaluacion.get(e.id) ?? 0) + Number(e.puntaje ?? 0)
     );
   }
-  const evaluacionesPorGrupo = new Map<string, Set<string>>();
-  for (const e of evaluacionesFilas) {
-    if (!e.grupoId) continue;
-    const set = evaluacionesPorGrupo.get(e.grupoId) ?? new Set<string>();
-    set.add(e.id);
-    evaluacionesPorGrupo.set(e.grupoId, set);
-  }
+  const totalEvaluacionesGrupo = new Set(evaluacionesFilas.map((e) => e.id)).size;
 
   const filas = filasFiltradas.map((f) => {
     const asistenciaEstudiante = asistenciasFilas.filter((a) => a.estudianteId === f.estudianteId);
@@ -135,7 +147,6 @@ export default async function ReportesPage({
     const intentosEstudiante = intentosFilas.filter(
       (i) => i.estudianteId === f.estudianteId && i.entregadoAt
     );
-    const totalEvaluacionesGrupo = (f.grupoId && evaluacionesPorGrupo.get(f.grupoId)?.size) || 0;
     const porcentajes = intentosEstudiante
       .map((i) => {
         const total = totalPorEvaluacion.get(i.evaluacionId) ?? 0;
@@ -151,9 +162,6 @@ export default async function ReportesPage({
       dni: f.dni,
       nombres: f.nombres,
       apellidos: f.apellidos,
-      grupo: f.grupoNombre
-        ? `${f.sedeNombre} · ${modalidadEtiqueta[f.modalidad ?? ""] ?? f.modalidad} · ${f.grupoNombre}`
-        : "Sin grupo",
       estadoMatricula: f.estado,
       asistenciaPct,
       evaluacionesRendidas: `${intentosEstudiante.length}/${totalEvaluacionesGrupo}`,
@@ -165,7 +173,7 @@ export default async function ReportesPage({
     dni: f.dni,
     nombres: f.nombres,
     apellidos: f.apellidos,
-    grupo: f.grupo,
+    grupo: grupoSeleccionado?.nombre ?? "",
     estadoMatricula: f.estadoMatricula,
     asistenciaPct: f.asistenciaPct === null ? "—" : `${f.asistenciaPct}%`,
     evaluacionesRendidas: f.evaluacionesRendidas,
@@ -175,115 +183,110 @@ export default async function ReportesPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Módulo central de reportes</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Módulo central de reportes</h1>
         <p className="text-sm text-ink-soft">
-          Vigencia, asistencia y evaluaciones consolidadas por estudiante. Usa
-          Cmd/Ctrl+P para imprimir.
+          Elige la sede y el grupo para ver vigencia, asistencia y evaluaciones consolidadas por
+          estudiante.
         </p>
       </div>
 
-      <form className="flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface p-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-ink">Estado de matrícula</span>
-          <select
-            name="estado"
-            defaultValue={filtroEstado}
-            className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
-          >
-            <option value="">Todos</option>
-            <option value="activa">Activa</option>
-            <option value="por_vencer">Por vencer</option>
-            <option value="vencida">Vencida</option>
-            <option value="retirada">Retirada</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-ink">Sede</span>
-          <select
-            name="sede"
-            defaultValue={filtroSede}
-            className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
-          >
-            <option value="">Todas</option>
-            {listaSedes.map((s) => (
-              <option key={s.id} value={s.nombre}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-ink">Modalidad</span>
-          <select
-            name="modalidad"
-            defaultValue={filtroModalidad}
-            className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
-          >
-            <option value="">Todas</option>
-            <option value="presencial">Presencial</option>
-            <option value="virtual">Virtual</option>
-          </select>
-        </label>
-        <button
-          type="submit"
-          className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
-        >
-          Filtrar
-        </button>
-        <div className="ml-auto">
-          <ExportarReporteButton filas={filasExport} />
-        </div>
-      </form>
+      <SelectorReportes
+        sedes={listaSedes}
+        grupos={opcionesGrupos}
+        grupoActual={
+          grupoSeleccionado && sedeDelGrupo
+            ? { sedeNombre: sedeDelGrupo.nombre, grupoNombre: grupoSeleccionado.nombre }
+            : null
+        }
+      />
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-        <table className="w-full min-w-[860px] text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-soft">
-              <th className="px-4 py-3 font-medium">DNI</th>
-              <th className="px-4 py-3 font-medium">Estudiante</th>
-              <th className="px-4 py-3 font-medium">Grupo</th>
-              <th className="px-4 py-3 font-medium">Matrícula</th>
-              <th className="px-4 py-3 font-medium">Asistencia</th>
-              <th className="px-4 py-3 font-medium">Evaluaciones</th>
-              <th className="px-4 py-3 font-medium">Promedio</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f) => (
-              <tr key={f.estudianteId} className="border-b border-line last:border-0">
-                <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.dni}</td>
-                <td className="px-4 py-3 font-medium text-ink">
-                  {f.nombres} {f.apellidos}
-                </td>
-                <td className="px-4 py-3 text-ink-soft">{f.grupo}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${estadoEstilo[f.estadoMatricula]}`}
-                  >
-                    {f.estadoMatricula}
-                  </span>
-                </td>
-                <td className="px-4 py-3 font-mono-tab text-ink-soft">
-                  {f.asistenciaPct === null ? "—" : `${f.asistenciaPct}%`}
-                </td>
-                <td className="px-4 py-3 font-mono-tab text-ink-soft">
-                  {f.evaluacionesRendidas}
-                </td>
-                <td className="px-4 py-3 font-mono-tab text-ink-soft">
-                  {f.promedio === null ? "—" : `${f.promedio}%`}
-                </td>
-              </tr>
-            ))}
-            {!filas.length && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-ink-soft">
-                  No hay datos con esos filtros.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {grupoSeleccionado ? (
+        <>
+          <form className="flex flex-wrap items-end gap-3 surface-card p-4 print:hidden">
+            <input type="hidden" name="grupo_id" value={grupoSeleccionado.id} />
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-ink">Estado de matrícula</span>
+              <select
+                name="estado"
+                defaultValue={filtroEstado}
+                className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
+              >
+                <option value="">Todos</option>
+                <option value="activa">Activa</option>
+                <option value="por_vencer">Por vencer</option>
+                <option value="vencida">Vencida</option>
+                <option value="retirada">Retirada</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
+            >
+              Filtrar
+            </button>
+            <div className="ml-auto">
+              <ExportarReporteButton filas={filasExport} />
+            </div>
+          </form>
+
+          <div className="overflow-x-auto surface-card">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-soft">
+                  <th className="px-4 py-3 font-medium">DNI</th>
+                  <th className="px-4 py-3 font-medium">Estudiante</th>
+                  <th className="px-4 py-3 font-medium">Matrícula</th>
+                  <th className="px-4 py-3 font-medium">Asistencia</th>
+                  <th className="px-4 py-3 font-medium">Evaluaciones</th>
+                  <th className="px-4 py-3 font-medium">Promedio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map((f) => (
+                  <tr key={f.estudianteId} className="border-b border-line last:border-0">
+                    <td className="px-4 py-3 font-mono-tab text-ink-soft">{f.dni}</td>
+                    <td className="px-4 py-3 font-medium text-ink">
+                      <Link
+                        href={`/asistencia/alumno/${f.estudianteId}`}
+                        className="text-brand-blue hover:underline"
+                      >
+                        {f.nombres} {f.apellidos}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${estadoEstilo[f.estadoMatricula]}`}
+                      >
+                        {f.estadoMatricula}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono-tab text-ink-soft">
+                      {f.asistenciaPct === null ? "—" : `${f.asistenciaPct}%`}
+                    </td>
+                    <td className="px-4 py-3 font-mono-tab text-ink-soft">
+                      {f.evaluacionesRendidas}
+                    </td>
+                    <td className="px-4 py-3 font-mono-tab text-ink-soft">
+                      {f.promedio === null ? "—" : `${f.promedio}%`}
+                    </td>
+                  </tr>
+                ))}
+                {!filas.length && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-ink-soft">
+                      No hay alumnos con esos filtros.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <p className="surface-card px-4 py-10 text-center text-sm text-ink-soft">
+          Elige una sede y luego un grupo para ver el reporte.
+        </p>
+      )}
     </div>
   );
 }

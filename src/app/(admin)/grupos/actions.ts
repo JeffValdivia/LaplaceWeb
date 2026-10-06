@@ -13,7 +13,6 @@ function revalidarVistasDeGrupos(sedeId: string) {
   revalidatePath(`/sedes/${sedeId}`);
   revalidatePath("/estudiantes/nuevo");
   revalidatePath("/dashboard");
-  revalidatePath("/campus");
   revalidatePath("/evaluaciones");
   revalidatePath("/asistencia");
   revalidatePath("/notificaciones");

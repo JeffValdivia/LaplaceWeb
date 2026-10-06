@@ -27,7 +27,7 @@ export default async function NuevoEstudiantePage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Matricular estudiante</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Matricular estudiante</h1>
         <p className="text-sm text-ink-soft">
           La fecha de fin se calcula sola: 1 mes exacto desde la fecha de ingreso.
         </p>
@@ -42,7 +42,9 @@ export default async function NuevoEstudiantePage() {
           y crea uno antes de matricular.
         </p>
       ) : (
-        <NuevoEstudianteForm sedes={listaSedes} grupos={listaGrupos} carreras={listaCarreras} />
+        <div className="surface-card p-6">
+          <NuevoEstudianteForm sedes={listaSedes} grupos={listaGrupos} carreras={listaCarreras} />
+        </div>
       )}
     </div>
   );

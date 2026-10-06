@@ -21,6 +21,27 @@
   --danger-soft: #fae4e1;
 }
 
+/* Modo noche: se activa con [data-theme="dark"] en <html> (botón en el
+   sidebar, persistido en localStorage — ver theme-toggle.tsx). Los
+   colores de marca (navy/blue del sidebar y los botones en gradiente)
+   se mantienen iguales a propósito en ambos modos. */
+:root[data-theme="dark"] {
+  --bg: #0f1420;
+  --surface: #161b2c;
+  --ink: #e8eaf2;
+  --ink-soft: #9aa3c0;
+  --line: #2a3150;
+
+  --brand-blue: #6d8fe0;
+
+  --ok: #34d399;
+  --ok-soft: #113524;
+  --warn: #f5a623;
+  --warn-soft: #3a2a0d;
+  --danger: #f0564a;
+  --danger-soft: #3a1a16;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -41,6 +62,7 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
 }
 
 body {
@@ -52,4 +74,96 @@ body {
 .font-mono-tab {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--brand-blue-light);
+  color: #ffffff;
+}
+
+/* Tarjeta elevada reutilizable: mismo fondo/borde de siempre, más sombra
+   suave, un tinte de color a baja opacidad al pasar el mouse y una pequeña
+   elevación — para que la interfaz admin se sienta más moderna sin tocar
+   el fondo blanco de la página. */
+@layer components {
+  .surface-card {
+    @apply relative rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgba(23,27,46,0.04),0_8px_20px_-12px_rgba(23,27,46,0.12)] transition-all duration-200 hover:bg-brand-blue-light/[0.06];
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float-in {
+  animation: float-in 0.3s ease-out both;
+}
+
+.icono-animado:hover {
+  animation: wiggle 0.4s ease-in-out;
+}
+
+/* Efecto de carga para los gráficos del dashboard: las barras "se llenan"
+   y el donut aparece con un pop-in, en vez de mostrarse ya completos. */
+@keyframes barra-llenado-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes barra-llenado-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes donut-aparecer {
+  from {
+    opacity: 0;
+    transform: scale(0.75) rotate(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-90deg);
+  }
+}
+
+.animar-barra-x {
+  transform-origin: left center;
+  animation: barra-llenado-x 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animar-barra-y {
+  transform-origin: bottom center;
+  animation: barra-llenado-y 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animar-donut {
+  animation: donut-aparecer 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

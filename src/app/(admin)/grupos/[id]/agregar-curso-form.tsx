@@ -38,7 +38,7 @@ export function AgregarCursoForm({
         setDocenteId("");
         setAutocompletado(false);
       }}
-      className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-end sm:flex-wrap"
+      className="flex flex-col gap-3 surface-card p-5 sm:flex-row sm:items-end sm:flex-wrap"
     >
       <input type="hidden" name="grupo_id" value={grupoId} />
       <label className="flex flex-1 flex-col gap-1.5 text-sm">
@@ -91,7 +91,7 @@ export function AgregarCursoForm({
       </label>
       <button
         type="submit"
-        className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
+        className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
       >
         Agregar asignatura al grupo
       </button>
