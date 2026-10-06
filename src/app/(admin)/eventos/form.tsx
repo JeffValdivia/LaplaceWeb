@@ -17,7 +17,7 @@ export function EventoForm({ sedes, grupos }: { sedes: Sede[]; grupos: Grupo[] }
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5"
+      className="flex flex-col gap-3 surface-card p-5"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <label className={etiqueta}>
@@ -98,7 +98,7 @@ export function EventoForm({ sedes, grupos }: { sedes: Sede[]; grupos: Grupo[] }
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue disabled:opacity-60"
+        className="self-start rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200 disabled:opacity-60"
       >
         {pending ? "Programando…" : "Programar evento"}
       </button>

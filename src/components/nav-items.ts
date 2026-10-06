@@ -1,23 +1,23 @@
 export type NavItem = {
-  item: string;
   nombre: string;
   href: string;
   fase: 1 | 2 | 3;
   listo: boolean;
+  icono: string;
 };
 
 export const navItems: NavItem[] = [
-  { item: "01", nombre: "Dashboard administrativo", href: "/dashboard", fase: 1, listo: true },
-  { item: "02", nombre: "Estudiantes y matrículas", href: "/estudiantes", fase: 1, listo: true },
-  { item: "03", nombre: "Grupos académicos", href: "/grupos", fase: 1, listo: true },
-  { item: "04", nombre: "Asignaturas", href: "/sedes", fase: 1, listo: true },
-  { item: "05", nombre: "Vigencia de matrícula", href: "/vigencia", fase: 1, listo: true },
-  { item: "12", nombre: "Seguridad y roles", href: "/roles", fase: 1, listo: true },
-  { item: "06", nombre: "Campus virtual y recursos", href: "/campus", fase: 2, listo: true },
-  { item: "07", nombre: "Evaluaciones virtuales", href: "/evaluaciones", fase: 2, listo: true },
-  { item: "08", nombre: "Asistencia", href: "/asistencia", fase: 2, listo: true },
-  { item: "09", nombre: "Notificaciones oficiales", href: "/notificaciones", fase: 2, listo: true },
-  { item: "13", nombre: "Eventos del calendario", href: "/eventos", fase: 2, listo: true },
-  { item: "10", nombre: "Portal del estudiante", href: "/portal", fase: 3, listo: true },
-  { item: "11", nombre: "Módulo central de reportes", href: "/reportes", fase: 3, listo: true },
+  { nombre: "Dashboard administrativo", href: "/dashboard", fase: 1, listo: true, icono: "dashboard" },
+  { nombre: "Estudiantes y matrículas", href: "/estudiantes", fase: 1, listo: true, icono: "estudiantes" },
+  { nombre: "Grupos académicos", href: "/grupos", fase: 1, listo: true, icono: "grupos" },
+  { nombre: "Asignaturas", href: "/sedes", fase: 1, listo: true, icono: "asignaturas" },
+  { nombre: "Vigencia de matrícula", href: "/vigencia", fase: 1, listo: true, icono: "vigencia" },
+  { nombre: "Seguridad y roles", href: "/roles", fase: 1, listo: true, icono: "seguridad" },
+  { nombre: "Evaluaciones virtuales", href: "/evaluaciones", fase: 2, listo: true, icono: "evaluaciones" },
+  { nombre: "Evaluación a docente", href: "/evaluacion-docente", fase: 2, listo: true, icono: "evaluaciones" },
+  { nombre: "Asistencia", href: "/asistencia", fase: 2, listo: true, icono: "asistencia" },
+  { nombre: "Notificaciones oficiales", href: "/notificaciones", fase: 2, listo: true, icono: "notificaciones" },
+  { nombre: "Eventos del calendario", href: "/eventos", fase: 2, listo: true, icono: "eventos" },
+  { nombre: "Módulo central de reportes", href: "/reportes", fase: 3, listo: true, icono: "reportes" },
+  { nombre: "Reporte de alumnos", href: "/reporte-alumnos", fase: 3, listo: true, icono: "listaAlumnos" },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { crearAsignatura, actualizarDocenteAsignatura } from "./actions";
 
 type Sede = { id: string; nombre: string };
@@ -20,16 +20,33 @@ function etiquetaDocente(d: DocenteOpcion) {
 export function NuevaAsignaturaForm({
   sedes,
   docentes,
+  onCreada,
 }: {
   sedes: Sede[];
   docentes: DocenteOpcion[];
+  onCreada?: () => void;
 }) {
   const [error, formAction, pending] = useActionState(crearAsignatura, null);
   const [sedeId, setSedeId] = useState("");
   const opciones = sedeId ? docentesDeSede(docentes, sedeId) : [];
+  const formRef = useRef<HTMLFormElement>(null);
+  const estabaEnviando = useRef(false);
+
+  useEffect(() => {
+    if (pending) {
+      estabaEnviando.current = true;
+      return;
+    }
+    if (estabaEnviando.current && !error) {
+      estabaEnviando.current = false;
+      formRef.current?.reset();
+      setSedeId("");
+      onCreada?.();
+    }
+  }, [pending, error, onCreada]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-2">
       <input name="nombre" required placeholder="Nombre de la asignatura" className={campo} />
       <select
         name="sede_id"
@@ -69,7 +86,7 @@ export function NuevaAsignaturaForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-md bg-brand-navy px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-blue disabled:opacity-60"
+        className="self-start rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200 disabled:opacity-60"
       >
         {pending ? "Agregando…" : "Agregar asignatura"}
       </button>

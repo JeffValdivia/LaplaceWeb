@@ -57,6 +57,41 @@
       "when": 1791074585286,
       "tag": "0007_careless_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791164762862,
+      "tag": "0008_even_shriek",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791165814610,
+      "tag": "0009_bent_morlun",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791168441616,
+      "tag": "0010_simple_shen",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791262437437,
+      "tag": "0011_lonely_jean_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791263843227,
+      "tag": "0012_curvy_slipstream",
+      "breakpoints": true
     }
   ]
 }

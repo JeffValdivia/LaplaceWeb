@@ -5,7 +5,7 @@ export default function ImportarEstudiantesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Cargar alumnos desde Excel</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Cargar alumnos desde Excel</h1>
         <p className="text-sm text-ink-soft">
           Matricula varios alumnos a la vez. Cada fila se asigna a su grupo
           automáticamente según la Sede y el Grupo que escribas, y se crea su
@@ -14,7 +14,7 @@ export default function ImportarEstudiantesPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5">
+      <div className="flex flex-col gap-3 surface-card p-5">
         <h2 className="text-sm font-medium text-ink">1. Descarga la plantilla</h2>
         <p className="text-sm text-ink-soft">
           Trae las columnas en el orden correcto y listas desplegables para
@@ -29,7 +29,7 @@ export default function ImportarEstudiantesPage() {
         </a>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5">
+      <div className="flex flex-col gap-3 surface-card p-5">
         <h2 className="text-sm font-medium text-ink">2. Sube el Excel lleno</h2>
         <ImportarEstudiantesForm />
       </div>

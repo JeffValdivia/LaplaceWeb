@@ -25,12 +25,12 @@ export function ImportarEstudiantesForm() {
           name="archivo"
           accept=".xlsx"
           required
-          className="text-sm text-ink file:mr-3 file:rounded-md file:border-0 file:bg-brand-navy file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-blue"
+          className="text-sm text-ink file:mr-3 file:rounded-md file:border-0 file:bg-gradient-to-r file:from-brand-navy file:to-brand-blue file:px-4 file:py-2 file:text-sm file:font-medium file:text-white file:transition-all file:duration-200 hover:file:brightness-110"
         />
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue disabled:opacity-60"
+          className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 hover:shadow-lg disabled:opacity-60"
         >
           {pending ? "Importando…" : "Importar"}
         </button>

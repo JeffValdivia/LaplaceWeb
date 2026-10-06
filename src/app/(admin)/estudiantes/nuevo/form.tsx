@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useActionState } from "react";
 import { matricularEstudiante } from "../actions";
 
@@ -31,15 +31,29 @@ export function NuevoEstudianteForm({
   sedes,
   grupos,
   carreras,
+  onCreada,
 }: {
   sedes: Sede[];
   grupos: Grupo[];
   carreras: Carrera[];
+  onCreada?: () => void;
 }) {
   const [error, formAction, pending] = useActionState(matricularEstudiante, null);
   const [sedeId, setSedeId] = useState("");
   const [grupoId, setGrupoId] = useState("");
   const [proceso, setProceso] = useState("");
+  const estabaEnviando = useRef(false);
+
+  useEffect(() => {
+    if (pending) {
+      estabaEnviando.current = true;
+      return;
+    }
+    if (estabaEnviando.current && !error) {
+      estabaEnviando.current = false;
+      onCreada?.();
+    }
+  }, [pending, error, onCreada]);
 
   const sedeNombre = useMemo(() => sedes.find((s) => s.id === sedeId)?.nombre ?? "", [sedes, sedeId]);
   const gruposDeLaSede = useMemo(
@@ -49,13 +63,12 @@ export function NuevoEstudianteForm({
   const procesosDeLaSede = useMemo(() => PROCESOS_POR_SEDE[sedeNombre] ?? [], [sedeNombre]);
 
   return (
-    <form
-      action={formAction}
-      className="flex max-w-3xl flex-col gap-6 rounded-lg border border-line bg-surface p-6"
-    >
-      <div className="grid gap-6 sm:grid-cols-2">
-        <fieldset className="flex flex-col gap-4 rounded-lg border border-line bg-bg p-4">
-          <legend className="mb-1 px-1 text-sm font-medium text-ink">Datos del alumno</legend>
+    <form action={formAction} className="flex flex-col gap-4">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <fieldset className="flex flex-col gap-3 rounded-lg border border-line bg-bg p-3">
+          <legend className="mb-0.5 px-1 text-xs font-medium uppercase tracking-wide text-ink-soft">
+            Datos del alumno
+          </legend>
           <label className={etiqueta}>
             <span className="font-medium text-ink">Apellidos</span>
             <input name="apellidos" required className={campo} />
@@ -82,8 +95,10 @@ export function NuevoEstudianteForm({
           </label>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4 rounded-lg border border-line bg-bg p-4">
-          <legend className="mb-1 px-1 text-sm font-medium text-ink">Datos de la sede y postulación</legend>
+        <fieldset className="flex flex-col gap-3 rounded-lg border border-line bg-bg p-3">
+          <legend className="mb-0.5 px-1 text-xs font-medium uppercase tracking-wide text-ink-soft">
+            Sede y postulación
+          </legend>
           <label className={etiqueta}>
             <span className="font-medium text-ink">Sede</span>
             <select
@@ -183,11 +198,11 @@ export function NuevoEstudianteForm({
             />
           </label>
         </fieldset>
-      </div>
 
-      <fieldset className="flex flex-col gap-4 rounded-lg border border-line bg-bg p-4">
-        <legend className="mb-1 px-1 text-sm font-medium text-ink">Apoderado</legend>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <fieldset className="flex flex-col gap-3 rounded-lg border border-line bg-bg p-3">
+          <legend className="mb-0.5 px-1 text-xs font-medium uppercase tracking-wide text-ink-soft">
+            Apoderado
+          </legend>
           <label className={etiqueta}>
             <span className="font-medium text-ink">Nombres del apoderado</span>
             <input name="apoderado_nombre" required className={campo} />
@@ -196,8 +211,8 @@ export function NuevoEstudianteForm({
             <span className="font-medium text-ink">Celular del apoderado</span>
             <input name="apoderado_celular" required className={campo} />
           </label>
-        </div>
-      </fieldset>
+        </fieldset>
+      </div>
 
       {error && (
         <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
@@ -206,7 +221,7 @@ export function NuevoEstudianteForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-md bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-blue disabled:opacity-60"
+        className="self-start rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-5 py-2.5 text-sm font-semibold text-white hover:brightness-110 hover:shadow-lg transition-all duration-200 disabled:opacity-60"
       >
         {pending ? "Guardando…" : "Matricular"}
       </button>

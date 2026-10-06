@@ -52,7 +52,7 @@ export default async function EvaluacionesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Evaluaciones virtuales</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Evaluaciones virtuales</h1>
         <p className="text-sm text-ink-soft">
           Crea la evaluación aquí y entra a cada una para agregar sus preguntas
           y alternativas.
@@ -61,7 +61,7 @@ export default async function EvaluacionesPage() {
 
       <form
         action={crearEvaluacion}
-        className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5"
+        className="flex flex-col gap-3 surface-card p-5"
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
@@ -107,16 +107,26 @@ export default async function EvaluacionesPage() {
               className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
             />
           </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-ink">Duración del intento (minutos, opcional)</span>
+            <input
+              type="number"
+              name="duracion_minutos"
+              min={1}
+              placeholder="Ej. 15 — vacío = sin límite"
+              className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
+            />
+          </label>
         </div>
         <button
           type="submit"
-          className="self-start rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
+          className="self-start rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
         >
           Crear evaluación
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+      <div className="overflow-x-auto surface-card">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-soft">

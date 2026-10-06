@@ -29,6 +29,7 @@ export default async function EvaluacionesDocentePage({
       titulo: evaluaciones.titulo,
       disponibleDesde: evaluaciones.disponibleDesde,
       disponibleHasta: evaluaciones.disponibleHasta,
+      duracionMinutos: evaluaciones.duracionMinutos,
       cantidadPreguntas: sql<number>`count(${preguntas.id})`.mapWith(Number),
     })
     .from(evaluaciones)
@@ -77,7 +78,22 @@ export default async function EvaluacionesDocentePage({
               className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
             />
           </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-ink">Duración del intento (minutos, opcional)</span>
+            <input
+              type="number"
+              name="duracion_minutos"
+              min={1}
+              placeholder="Ej. 15 — déjalo vacío para sin límite"
+              className="rounded-md border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-brand-blue"
+            />
+          </label>
         </div>
+        <p className="text-xs text-ink-soft">
+          "Disponible desde/hasta" es la ventana en que se puede empezar. La
+          duración es el cronómetro que corre desde que el alumno abre su
+          intento — al llegar a 0 se entrega automáticamente.
+        </p>
         <button
           type="submit"
           className="self-start rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
@@ -94,7 +110,12 @@ export default async function EvaluacionesDocentePage({
             className="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface p-4 transition hover:border-brand-blue"
           >
             <span className="font-medium text-ink">{ev.titulo}</span>
-            <span className="font-mono-tab text-xs text-ink-soft">
+            <span className="flex items-center gap-2 font-mono-tab text-xs text-ink-soft">
+              {ev.duracionMinutos && (
+                <span className="rounded-full bg-brand-blue-light/20 px-2 py-0.5 text-brand-blue">
+                  ⏱ {ev.duracionMinutos} min
+                </span>
+              )}
               {ev.cantidadPreguntas} pregunta{ev.cantidadPreguntas === 1 ? "" : "s"}
             </span>
           </Link>

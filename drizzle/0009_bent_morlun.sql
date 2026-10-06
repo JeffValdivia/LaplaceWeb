@@ -1,0 +1,1 @@
+ALTER TABLE "evaluaciones" ADD COLUMN "duracion_minutos" integer;

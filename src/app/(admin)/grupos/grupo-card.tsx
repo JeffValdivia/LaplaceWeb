@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { actualizarGrupo, eliminarGrupo } from "./actions";
+import { temaPorSede } from "@/lib/tema-sede";
 
 const modalidadEtiqueta: Record<string, string> = {
   presencial: "Presencial",
@@ -37,6 +38,7 @@ function Badges({ grupo, cantidadCursos }: { grupo: Grupo; cantidadCursos: numbe
 export function GrupoCard({ grupo, cursos }: { grupo: Grupo; cursos: Curso[] }) {
   const [abierto, setAbierto] = useState(false);
   const [modo, setModo] = useState<"ver" | "editar" | "confirmar-eliminar">("ver");
+  const tema = temaPorSede[grupo.sedeNombre];
 
   const cerrar = () => {
     setAbierto(false);
@@ -57,7 +59,9 @@ export function GrupoCard({ grupo, cursos }: { grupo: Grupo; cursos: Curso[] }) 
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="flex w-full flex-col gap-2 rounded-lg border border-line bg-surface p-4 text-left transition hover:border-brand-blue"
+        className={`flex w-full flex-col gap-2 rounded-lg border bg-surface p-4 text-left shadow-sm transition-all duration-200 ${
+          tema ? tema.tarjeta : "border-line hover:-translate-y-0.5 hover:border-brand-blue hover:shadow-md"
+        }`}
       >
         <span className="font-medium text-ink">{grupo.nombre}</span>
         <Badges grupo={grupo} cantidadCursos={cursos.length} />
@@ -123,7 +127,7 @@ export function GrupoCard({ grupo, cursos }: { grupo: Grupo; cursos: Curso[] }) 
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="rounded-md bg-brand-navy px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-blue"
+                    className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
                   >
                     Guardar
                   </button>
@@ -160,9 +164,15 @@ export function GrupoCard({ grupo, cursos }: { grupo: Grupo; cursos: Curso[] }) 
                 <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4 text-sm font-medium">
                   <Link
                     href={`/grupos/${grupo.id}`}
-                    className="rounded-md bg-brand-navy px-3 py-1.5 text-white hover:bg-brand-blue"
+                    className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-3 py-1.5 text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
                   >
                     Gestionar cursos
+                  </Link>
+                  <Link
+                    href={`/grupos/${grupo.id}/lista`}
+                    className="rounded-md border border-line px-3 py-1.5 text-ink hover:border-brand-blue hover:text-brand-blue"
+                  >
+                    Lista de alumnos
                   </Link>
                   <button
                     type="button"

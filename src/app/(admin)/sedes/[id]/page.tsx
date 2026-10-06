@@ -39,11 +39,11 @@ export default async function SedeDetallePage({
         <Link href="/sedes" className="text-sm text-brand-blue hover:underline">
           ← Asignaturas
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-ink">{sede.nombre}</h1>
+        <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-ink">{sede.nombre}</h1>
         {sede.descripcion && <p className="text-sm text-ink-soft">{sede.descripcion}</p>}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+      <div className="overflow-x-auto surface-card">
         <table className="w-full min-w-[480px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-soft">
@@ -84,7 +84,7 @@ export default async function SedeDetallePage({
 
       <form
         action={crearGrupo}
-        className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-end sm:flex-wrap"
+        className="flex flex-col gap-3 surface-card p-5 sm:flex-row sm:items-end sm:flex-wrap"
       >
         <input type="hidden" name="sede_id" value={id} />
         <label className="flex flex-1 flex-col gap-1.5 text-sm">
@@ -110,7 +110,7 @@ export default async function SedeDetallePage({
         </label>
         <button
           type="submit"
-          className="rounded-md bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue"
+          className="rounded-md bg-gradient-to-r from-brand-navy to-brand-blue px-4 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-lg transition-all duration-200"
         >
           Crear grupo en esta sede
         </button>

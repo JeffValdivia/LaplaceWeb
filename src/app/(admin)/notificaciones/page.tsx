@@ -23,7 +23,7 @@ export default async function NotificacionesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Notificaciones y comunicados</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Notificaciones y comunicados</h1>
         <p className="text-sm text-ink-soft">
           Publica para toda la academia o para un grupo específico.
         </p>
@@ -33,7 +33,7 @@ export default async function NotificacionesPage() {
 
       <div className="flex flex-col gap-3">
         {filas.map((c) => (
-          <div key={c.id} className="rounded-lg border border-line bg-surface p-4">
+          <div key={c.id} className="surface-card p-4">
             <div className="mb-1 flex items-center justify-between gap-3">
               <p className="font-medium text-ink">{c.titulo}</p>
               <span className="rounded-full bg-brand-blue-light/20 px-2.5 py-0.5 text-xs font-medium text-brand-blue">
@@ -47,7 +47,7 @@ export default async function NotificacionesPage() {
           </div>
         ))}
         {!filas.length && (
-          <p className="rounded-lg border border-line bg-surface px-4 py-6 text-center text-sm text-ink-soft">
+          <p className="surface-card px-4 py-6 text-center text-sm text-ink-soft">
             Todavía no hay comunicados publicados.
           </p>
         )}
